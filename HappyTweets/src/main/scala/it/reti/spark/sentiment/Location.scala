@@ -82,10 +82,14 @@ class Location(userSelection: Int) extends Serializable with Logging{
      else{
        
        //if i have Place value
-       if((tweet.getPlace !=null)&&(tweet.getPlace.getBoundingBoxCoordinates!=null)&&(tweet.getPlace.getBoundingBoxCoordinates.head !=null)){
-           if(  latitudeInBox(tweet.getPlace.getBoundingBoxCoordinates.head.head.getLatitude) 
-                 && longitudeInBox(tweet.getPlace.getBoundingBoxCoordinates.head.head.getLongitude)  ) true
-           else false 
+       if(   (tweet.getPlace !=null)
+           &&(tweet.getPlace.getBoundingBoxCoordinates!=null)
+           &&(tweet.getPlace.getBoundingBoxCoordinates.head !=null)
+           &&(tweet.getPlace.getBoundingBoxCoordinates.head.head !=null)  
+          ){
+             if(  latitudeInBox(tweet.getPlace.getBoundingBoxCoordinates.head.head.getLatitude) 
+                   && longitudeInBox(tweet.getPlace.getBoundingBoxCoordinates.head.head.getLongitude)  )  true
+             else false 
        
        }else false
      }
@@ -94,6 +98,8 @@ class Location(userSelection: Int) extends Serializable with Logging{
   }// end checkLocation method //
 
 
+  
+  
   
   /*.................................................................................................................*/
   /**
