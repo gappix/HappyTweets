@@ -11,7 +11,6 @@ import org.apache.spark.Logging
  * @param userSelection: it is an integer according to which a specific area of interest is defined
  * It contains methods to check if tweet location is inside desired area of interest
  */
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////  
 @SerialVersionUID(100L)
 class Location(userSelection: Int) extends Serializable with Logging{
   
@@ -82,10 +81,14 @@ class Location(userSelection: Int) extends Serializable with Logging{
      else{
        
        //if i have Place value
-       if((tweet.getPlace !=null)&&(tweet.getPlace.getBoundingBoxCoordinates!=null)&&(tweet.getPlace.getBoundingBoxCoordinates.head !=null)){
-           if(  latitudeInBox(tweet.getPlace.getBoundingBoxCoordinates.head.head.getLatitude) 
-                 && longitudeInBox(tweet.getPlace.getBoundingBoxCoordinates.head.head.getLongitude)  ) true
-           else false 
+       if(   (tweet.getPlace !=null)
+           &&(tweet.getPlace.getBoundingBoxCoordinates!=null)
+           &&(tweet.getPlace.getBoundingBoxCoordinates.head !=null)
+           &&(tweet.getPlace.getBoundingBoxCoordinates.head.head !=null)  
+          ){
+             if(  latitudeInBox(tweet.getPlace.getBoundingBoxCoordinates.head.head.getLatitude) 
+                   && longitudeInBox(tweet.getPlace.getBoundingBoxCoordinates.head.head.getLongitude)  )  true
+             else false 
        
        }else false
      }

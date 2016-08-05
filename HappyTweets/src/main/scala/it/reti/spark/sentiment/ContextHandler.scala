@@ -28,12 +28,12 @@ object ContextHandler extends Logging {
   
   //SPARK contexts creation
   private val conf = new SparkConf()
-    .setAppName("SPARK Twitter Analyzer")
-    //.setMaster("yarn-client")
+    .setAppName("Blue Eyes")
+    .setMaster("local[*]")
     //Kryo Options
     .set("spark.serializer","org.apache.spark.serializer.KryoSerializer")
     .registerKryoClasses( Array(
-    //classOf[scala.collection.mutable.WrappedArray$ofRef],
+    classOf[scala.collection.mutable.WrappedArray[_]],
     classOf[Array[org.apache.spark.streaming.receiver.Receiver[_]]],
     classOf[org.apache.spark.sql.types.StructType],
     classOf[Array[org.apache.spark.sql.types.StructField]],
@@ -42,7 +42,7 @@ object ContextHandler extends Logging {
     classOf[Array[org.apache.spark.sql.catalyst.InternalRow]],
     //classOf[org.apache.spark.sql.types.StringType$],
     classOf[org.apache.spark.sql.types.Metadata],
-    //classOf[scala.collection.immutable.Map$EmptyMap$],
+    classOf[scala.collection.immutable.Map[_,_]],
     classOf[org.apache.spark.sql.catalyst.expressions.UnsafeRow],
     classOf[org.apache.spark.sql.catalyst.expressions.GenericInternalRow],
     classOf[Array[Object]],

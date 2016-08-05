@@ -15,8 +15,7 @@ import org.apache.spark.Logging
  *  Main object for the SPARK Twitter Analyzer app 
  *  
  *  @args "batch" or "streaming" string to select desired execution mode          
- */
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////  
+ */  
 object Main extends Logging{
   
 
@@ -30,7 +29,7 @@ object Main extends Logging{
       
        //BATCH case
         case "batch" => {
-          val fileName = "/user/maria_dev/Tutorials/SPARKTwitterAnalyzer/RawTweets.json"
+          val fileName = "/root/RawTweets.json"
           new TweetBatchApp(fileName)
         }
         //STREAMING case

@@ -39,7 +39,7 @@ object Hedonometer extends Serializable with Logging{
     
     
     //load textfile RDD
-    private val inputHEDONOMETER = sc.textFile("/user/maria_dev/Tutorials/SPARKTwitterAnalyzer/HedonometerNOHEADER.txt")
+    private val inputHEDONOMETER = sc.textFile("/root/HedonometerNOHEADER.txt")
     
     
     

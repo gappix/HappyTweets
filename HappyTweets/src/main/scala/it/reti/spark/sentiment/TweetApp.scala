@@ -173,27 +173,33 @@ abstract class TweetApp(processingType : String) extends Serializable with Loggi
   
   
   
-  /*.................................................................................................................*/
+/*.................................................................................................................*/
   /**
-   * Method which stores DataFrames with elaborated values into HIVE tables 
+   * Method which stores DataFrames with elaborated values into CASSANDRA tables 
    * 
-   * @tweetProcessedDF	DataFrame containing already processed tweets with final values
-   * @sentimentDF				DataFrame containing tweet sentiment and confidency evaluation 
+   * @param tweetProcessedDF	DataFrame containing already processed tweets with final values
+   * @param sentimentDF				DataFrame containing tweet sentiment and confidency evaluation 
    * 
    */
-  def storeDataFrameToHIVE ( tweetProcessedDF: DataFrame,  sentimentDF: DataFrame) {
+  def storeDataFrameToCASSANDRA ( tweetProcessedDF: DataFrame,  sentimentDF: DataFrame) {
      
     
     
     
     //call the DataStore object passing the Dataframe to store
-    myDataStorer.storeTweetsToHIVE(tweetProcessedDF)
-    myDataStorer.storeSentimentToHIVE(sentimentDF)
-
+    
+    
+    /*<<INFO>>*/  logInfo("Opening tweet storing procedure...")
+    myDataStorer.storeTweetsToCASSANDRA(tweetProcessedDF)
+    /*<<INFO>>*/  logInfo("tweets storing closed!")
+    
+    /*<<INFO>>*/  logInfo("Opening sentiment storing procedure...")
+    myDataStorer.storeSentimentToCASSANDRA(sentimentDF)
+    /*<<INFO>>*/  logInfo("sentiment storing closed!")
 
     
     
-  }//end storeDataFrameToHIVE method //
+  }//end storeDataFrameToCASSANDRA method //
   
   
   
