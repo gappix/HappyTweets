@@ -15,7 +15,7 @@ import twitter4j.Status
 
 
 
-/*°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°*/
+/*++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*/
 /**
  * This object instantiates all SPARK Contexts once, and then retrieves them with appropriate methods
  */
@@ -51,8 +51,8 @@ object ContextHandler extends Logging {
     ))
     //.set("spark.kryo.registrationRequired","true")
     //Spark logger options
-    .set("spark.eventLog.enabled","true")
-    .set("spark.eventLog.compress","true")
+    //.set("spark.eventLog.enabled","true")
+    //.set("spark.eventLog.compress","true")
 
 
     
