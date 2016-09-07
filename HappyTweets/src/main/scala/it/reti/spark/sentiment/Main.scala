@@ -34,7 +34,7 @@ object Main extends Logging{
         }
         //STREAMING case
         case "streaming" => {
-          println("\nSelect country to spy: \n \t\t 1: Australia \n \t\t 2: London \n \t\t 3: USA \n \t\t 5: United Kingdom \n ")
+          println("\nSelect country to spy: \n \t\t 1: Australia \n \t\t 2: London \n \t\t 3: USA \n \t\t 4: Lombardia \n \t\t 5: United Kingdom \n ")
           val location = Console.readLine()
           new TweetStreamingApp(location)
         }

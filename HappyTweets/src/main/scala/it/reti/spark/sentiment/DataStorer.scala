@@ -28,10 +28,11 @@ class DataStorer(processingType: String) extends Serializable with Logging{
   
   
   //CASSANDRA tables
-  val tableTweets =     "tweets_processed_"    + processingType                 
-  val tableSentiment =  "tweets_sentiment_"   + processingType     
+  val tableTweets =     "test_processed_"    + processingType                 
+  val tableSentiment =  "test_sentiment_"   + processingType     
+  val tableHashtag =     "test_hashtag_" + processingType
   
-  val keyspaceCassandra = "test"
+  val keyspaceCassandra = "qlik"
   
   
   
@@ -71,6 +72,23 @@ class DataStorer(processingType: String) extends Serializable with Logging{
   }//end storeSentimentToCASSANDRA method //
   
 
+  
+  
+      //.................................................................................................................
+  /**
+   * method to store sentiment infos into CASSANDRA tableSentiment
+   * @param hashtagDF: a DataFrame of elaborated hashtag values ready to be stored
+   */
+  def storeHashtagToCASSANDRA (hashtagDF: DataFrame) = {
+        
+        /*<<INFO>>*/ logInfo("Writing sentiment results into CASSANDRA table...") 
+        hashtagDF.persist().write.format("org.apache.spark.sql.cassandra").option("table",tableHashtag).option("keyspace",keyspaceCassandra).mode(SaveMode.Append).save()
+        /*<<INFO>>*/  logInfo("The following content has successfully been stored:")  
+        hashtagDF.show()
+        hashtagDF.unpersist()
+
+
+  }//end storeSentimentToCASSANDRA method //
   
   
 }//end DataStorer class //

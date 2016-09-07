@@ -181,7 +181,7 @@ abstract class TweetApp(processingType : String) extends Serializable with Loggi
    * @param sentimentDF				DataFrame containing tweet sentiment and confidency evaluation 
    * 
    */
-  def storeDataFrameToCASSANDRA ( tweetProcessedDF: DataFrame,  sentimentDF: DataFrame) {
+  def storeDataFrameToCASSANDRA ( tweetProcessedDF: DataFrame,  sentimentDF: DataFrame, hashtagDF: DataFrame) {
      
     
     
@@ -192,9 +192,15 @@ abstract class TweetApp(processingType : String) extends Serializable with Loggi
     /*<<INFO>>*/  logInfo("Opening tweet storing procedure...")
     myDataStorer.storeTweetsToCASSANDRA(tweetProcessedDF)
     /*<<INFO>>*/  logInfo("tweets storing closed!")
+
     
     /*<<INFO>>*/  logInfo("Opening sentiment storing procedure...")
     myDataStorer.storeSentimentToCASSANDRA(sentimentDF)
+    /*<<INFO>>*/  logInfo("sentiment storing closed!")
+    
+    
+    /*<<INFO>>*/  logInfo("Opening hashtag storing procedure...")
+    myDataStorer.storeHashtagToCASSANDRA(hashtagDF)
     /*<<INFO>>*/  logInfo("sentiment storing closed!")
 
     

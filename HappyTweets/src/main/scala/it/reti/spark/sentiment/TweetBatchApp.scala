@@ -99,7 +99,7 @@ class TweetBatchApp(fileNameAndPath : String) extends TweetApp("batch") {
     val elaboratedTweets = Elaborate(readyTWEETS)
     
     //store DataFrames into CASSANDRA tables
-    storeDataFrameToCASSANDRA(elaboratedTweets.allTweets, elaboratedTweets.sentimentTweets)
+    //storeDataFrameToCASSANDRA(elaboratedTweets.allTweets, elaboratedTweets.sentimentTweets)
     
    
 
