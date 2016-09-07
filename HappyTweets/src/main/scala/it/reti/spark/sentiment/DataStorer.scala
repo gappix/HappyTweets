@@ -48,6 +48,7 @@ class DataStorer(processingType: String) extends Serializable with Logging{
         /*<<INFO>>*/  logInfo("The following content has successfully been stored:")       
         tweetDF.show()
         tweetDF.unpersist()
+        
 
     
   }//end storeTweetsToCASSANDRA method //
