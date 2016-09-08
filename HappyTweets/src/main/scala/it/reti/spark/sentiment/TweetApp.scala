@@ -62,7 +62,7 @@ abstract class TweetApp(processingType : String) extends Serializable with Loggi
     import sqlContextHIVE.implicits._
     
     //getting the hedonometer
-    val hedoDF = Hedonometer.getHedonometer
+    val sentixDF = Sentix.getSentix
     
     
     
@@ -102,7 +102,8 @@ abstract class TweetApp(processingType : String) extends Serializable with Loggi
         $"user_name",
         when($"gl_latitude".isNull, $"bb_latitude").otherwise($"gl_latitude").as("latitude"),
         when($"gl_longitude".isNull, $"bb_longitude").otherwise($"gl_longitude").as("longitude"),
-        $"text"
+        $"text",
+        $"time"
         )
         
      
@@ -135,15 +136,15 @@ abstract class TweetApp(processingType : String) extends Serializable with Loggi
     * Sentiment evaluation
     *---------------------------------------------------*/
     
-    /*<<INFO>>*/ logInfo("Joining Dataframes " + hedoDF.toString() + " and " + sanitizedTWEETS.toString())
+    /*<<INFO>>*/ logInfo("Joining Dataframes " + sentixDF.toString() + " and " + sanitizedTWEETS.toString())
                                
     //joining tweets with Hedonometer dictionary                           
-    val sentimentTWEETS = hedoDF
-                               .join(sanitizedTWEETS, hedoDF("dictionary") === sanitizedTWEETS("word"), "inner")
+    val sentimentTWEETS = sentixDF
+                               .join(sanitizedTWEETS, sentixDF("sentix_word") === sanitizedTWEETS("word"), "inner")
                                .groupBy("tweet_id")
-                               .agg( "sentiment_value"  -> "avg",
+                               .agg( "absolute_sentiment"  -> "avg",
                                      "word"             -> "count" )
-                               .withColumnRenamed("avg(sentiment_value)","sentiment_value")
+                               .withColumnRenamed("avg(absolute_sentiment)","sentiment_value")
                                .withColumnRenamed("count(word)","matched_words")
     
     

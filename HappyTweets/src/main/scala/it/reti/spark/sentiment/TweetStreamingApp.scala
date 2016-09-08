@@ -149,7 +149,7 @@ class TweetStreamingApp(locationToObserve : String) extends TweetApp("streaming"
                                      StructField("bb_longitude", DoubleType, true),    
                                      StructField("gl_longitude", DoubleType, true),
                                      StructField("text", StringType, true),
-                                     StructField("data", LongType, true)
+                                     StructField("time", LongType, true)
                                      
                                     )//end of Array definition
                              
