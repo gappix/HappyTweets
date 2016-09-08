@@ -249,33 +249,23 @@ class TweetStreamingApp(locationToObserve : String) extends TweetApp("streaming"
       val geometryCoordinates     = place.getGeometryCoordinates
       val containerPlace          = place.getContainedWithIn
         
-      
+      //check Bounding Box Coordinates
       if (boundingBoxCoordinates != null) (  Some(boundingBoxCoordinates.head.head.getLatitude),  Some(boundingBoxCoordinates.head.head.getLongitude),   "bounding box")
       else {  
+              
+              //check Geometry Coordinates
               if (geometryCoordinates != null)  (  Some(geometryCoordinates.head.head.getLatitude),  Some(geometryCoordinates.head.head.getLongitude),   "geometry")
               else{
+                    
+                  //check Container Place
                     if (containerPlace != null) getPlaceCoordinates(containerPlace.head)
                     else (None, None, "everything is null")
                   }
             }
         }
       
-
-        
-       
-
     
-  /* 
-    
-    if (status != null && status.getPlace != null && status.getPlace.getBoundingBoxCoordinates != null) {
-      return (status.getPlace.getBoundingBoxCoordinates.head.head.getLatitude, status.getPlace.getBoundingBoxCoordinates.head.head.getLongitude)
-    }
-    else {
-      return (null.asInstanceOf[Double], null.asInstanceOf[Double])
-    }
-    */
-    
-  }// end getBoundingBoxCoordinates // */
+  }// end getPlaceCoordinates
   
   
   
