@@ -100,8 +100,7 @@ class TweetStreamingApp(locationToObserve : String) extends TweetApp("streaming"
     val streamTweets = TwitterUtils.createStream(ssc, None)//, filters, StorageLevel.MEMORY_ONLY_SER)    
     /*<<< INFO >>>*/ logInfo("Stream opened!")
 
-    
-    
+
     
 
     
@@ -112,11 +111,11 @@ class TweetStreamingApp(locationToObserve : String) extends TweetApp("streaming"
                                          val tags = t.getText.split(" ").filter(_.startsWith("#")).map(_.toLowerCase)
                                          tags.contains("#bigdata")
                                        }
-															*/
+															
                               .filter { status => status.getLang match{   case "it"     => true
                                                                           case ""       => true
                                                                           case default  => false  }
-                              }
+                              }*/
                               //.filter { status =>  myLocation.checkLocation(status) }
                                //.filter {status => status.getUser == "Paolo Gazzotti"}
       
@@ -133,23 +132,19 @@ class TweetStreamingApp(locationToObserve : String) extends TweetApp("streaming"
     /*<<< INFO >>>*/ logInfo(rdd.toString() +  " started!")
     
     
-    
-    
+
    /*...........................................
      * DataFrame creation
      *.........................................*/     
     
     val schema = StructType( 
                               Array( StructField("tweet_id", LongType, true), 
-                                     StructField("lang", StringType, true),
-                                     StructField("user_id", LongType, true),
-                                     StructField("user_name", StringType, true), 
-                                     StructField("bb_latitude", DoubleType, true),    
-                                     StructField("gl_latitude", DoubleType, true),
-                                     StructField("bb_longitude", DoubleType, true),    
-                                     StructField("gl_longitude", DoubleType, true),
-                                     StructField("text", StringType, true),
-                                     StructField("time", LongType, true)
+                                   
+                                     StructField("geolocation_lt", DoubleType, true),
+                                     StructField("geolocation_lon", DoubleType, true),
+                                     StructField("place_lat", DoubleType, true),
+                                     StructField("place_lon", DoubleType, true),
+                                     StructField("place_info", StringType, true)
                                      
                                     )//end of Array definition
                              
@@ -167,15 +162,14 @@ class TweetStreamingApp(locationToObserve : String) extends TweetApp("streaming"
                                         
                                                                 status =>   Row(
                                                                                   status.getId,                         //tweet_id
-                                                                                  status.getLang,                       //lang
-                                                                                  status.getUser.getId,                 //user_id
-                                                                                  status.getUser.getName,               //user_name 
-                                                                                  getBoundingBoxCoordinates(status)._1, //bb_latitude
-                                                                                  getGeoLocationCoordinates(status)._1, //gl_latitude
-                                                                                  getBoundingBoxCoordinates(status)._2, //bb_longitude
-                                                                                  getGeoLocationCoordinates(status)._2, //gl_longitude
-                                                                                  status.getText,                       //text                
-                                                                                  status.getCreatedAt.getTime            //data
+                                                               
+                                                                                  getGeoLocationCoordinates(status)._1,
+                                                                                  getGeoLocationCoordinates(status)._2,
+                                                                                  
+                                                                                  getPlaceCoordinates(status.getPlace)._1,
+                                                                                  getPlaceCoordinates(status.getPlace)._2,
+                                                                                  getPlaceCoordinates(status.getPlace)._3
+                                                      
                                                                                   )
                                                                                   
                                                                  ), schema)//end of createDataFrame
@@ -184,78 +178,10 @@ class TweetStreamingApp(locationToObserve : String) extends TweetApp("streaming"
                                                                     
                                                                     
                                                                     
-                                                                    
-                                                                    
-                                                                    
-     val tweetHashtagsDF = rdd.map( status => HashtagTweets( status.getId, 
-                                                             status.getHashtagEntities
-                                                                   
-                                                             
-                                                             
-                                                             
-                                                                  /*.filter { x => x.toString().toLowerCase() match  {
-                                                                                                  case "greenday"    => true
-                                                                                                  case "bigdata"     => true
-                                                                                                  case "raggirati"   => true
-                                                                                                  case default       => false }  }*/
-                                                                 .map { x => x.getText }
-                                                                 .mkString(" ")
-                                                                 
-     
-                                                              )).toDF()
-     
+     readyTweetsDF.show(1000)
+     readyTweetsDF.count()
      
 
- 
-                                  
-                                  
-                                  
-                                                                    
-     val tweetsHashtagsDF = tweetHashtagsDF.explode("hashtagList", "hashtag"){hashtagList: String => hashtagList.split(" ")}//explode  hashtag_list (n-words)(1-row) field in 
-                                                                                                                            //         hashtag     (1-word)(n-rows) one
-                                             
-                                                                    
-                                                                    
-        val identifyNull = udf (( hashtag: String) =>{  if (hashtag.length() > 0) hashtag
-                                                        else null        }
-                                )
-                                                                                                            
-                                                                   
-    
-      
-      
-      
-      /*<< INFO >>*/logInfo("Received " + readyTweetsDF.persist().count.toString() + " tweets") 
-      readyTweetsDF.show()
-      tweetsHashtagsDF.show()                                                             
-      val bubbasDF = tweetsHashtagsDF.filter(not(isnull(identifyNull(tweetsHashtagsDF("hashtag"))))).select($"tweet_id", $"hashtag")
-      bubbasDF.show()
-      
-     //checking if there is any message to process 
-     if(readyTweetsDF.count() > 0){
-       
-
-       
-       
-          //Elaborate method invoked at every RDD
-          val elaboratedTweets = Elaborate(readyTweetsDF)
-           
-          
-          
-          
-  
-          //store DataFrames to HIVE tables
-          storeDataFrameToCASSANDRA( elaboratedTweets.allTweets, elaboratedTweets.sentimentTweets, bubbasDF) 
-          
-          //free memory
-          readyTweetsDF.unpersist()
-          /*<<< INFO >>>*/ logInfo(rdd.toString() +  " Processing completed!")
-       
-          
-      }//end if
-    
-    
-    
     
      /*<<< INFO >>>*/ logInfo("\n\n ========================================== END ROUND ============================================>>>\n\n\n")
     
@@ -309,8 +235,37 @@ class TweetStreamingApp(locationToObserve : String) extends TweetApp("streaming"
    * Method that
    * @return (Place latitude, Place longitude) if present, (None None) otherwise
    */
-  def getBoundingBoxCoordinates(status : twitter4j.Status) : (Double, Double) = {
+    def getPlaceCoordinates(place : twitter4j.Place) : (Option[Double], Option[Double], String) = {
     
+    
+  
+    
+    
+    if (place == null)  (None, None, "place null")
+    
+    else {
+       
+      val boundingBoxCoordinates  = place.getBoundingBoxCoordinates
+      val geometryCoordinates     = place.getGeometryCoordinates
+      val containerPlace          = place.getContainedWithIn
+        
+      
+      if (boundingBoxCoordinates != null) (  Some(boundingBoxCoordinates.head.head.getLatitude),  Some(boundingBoxCoordinates.head.head.getLongitude),   "bounding box")
+      else {  
+              if (geometryCoordinates != null)  (  Some(geometryCoordinates.head.head.getLatitude),  Some(geometryCoordinates.head.head.getLongitude),   "geometry")
+              else{
+                    if (containerPlace != null) getPlaceCoordinates(containerPlace.head)
+                    else (None, None, "everything is null")
+                  }
+            }
+        }
+      
+
+        
+       
+
+    
+  /* 
     
     if (status != null && status.getPlace != null && status.getPlace.getBoundingBoxCoordinates != null) {
       return (status.getPlace.getBoundingBoxCoordinates.head.head.getLatitude, status.getPlace.getBoundingBoxCoordinates.head.head.getLongitude)
@@ -318,9 +273,9 @@ class TweetStreamingApp(locationToObserve : String) extends TweetApp("streaming"
     else {
       return (null.asInstanceOf[Double], null.asInstanceOf[Double])
     }
+    */
     
-    
-  }// end getBoundingBoxCoordinates //
+  }// end getBoundingBoxCoordinates // */
   
   
   
