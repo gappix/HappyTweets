@@ -100,8 +100,8 @@ abstract class TweetApp(processingType : String) extends Serializable with Loggi
         $"lang",
         $"user_id",
         $"user_name",
-        when($"gl_latitude".isNull, $"bb_latitude").otherwise($"gl_latitude").as("latitude"),
-        when($"gl_longitude".isNull, $"bb_longitude").otherwise($"gl_longitude").as("longitude"),
+        when($"geo_latitude".isNull, $"place_latitude").otherwise($"geo_latitude").as("latitude"),
+        when($"geo_longitude".isNull, $"place_longitude").otherwise($"geo_longitude").as("longitude"),
         $"text",
         $"time"
         )

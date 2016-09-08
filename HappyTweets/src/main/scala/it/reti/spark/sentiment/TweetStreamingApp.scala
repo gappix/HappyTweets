@@ -140,16 +140,20 @@ class TweetStreamingApp(locationToObserve : String) extends TweetApp("streaming"
      *.........................................*/     
     
     val schema = StructType( 
-                              Array( StructField("tweet_id", LongType, true), 
-                                     StructField("lang", StringType, true),
-                                     StructField("user_id", LongType, true),
-                                     StructField("user_name", StringType, true), 
-                                     StructField("bb_latitude", DoubleType, true),    
-                                     StructField("gl_latitude", DoubleType, true),
-                                     StructField("bb_longitude", DoubleType, true),    
-                                     StructField("gl_longitude", DoubleType, true),
-                                     StructField("text", StringType, true),
-                                     StructField("time", LongType, true)
+                              Array( StructField("tweet_id",      LongType,   true), 
+                                     StructField("lang",          StringType, true),
+                                     
+                                     StructField("user_id",       LongType,   true),
+                                     StructField("user_name",     StringType, true),
+                                     
+                                     StructField("geo_latitude",   DoubleType, true),
+                                     StructField("geo_longitude",  DoubleType, true),
+                                     
+                                     StructField("place_latitude",   DoubleType, true),    
+                                     StructField("place_longitude",  DoubleType, true), 
+                                     
+                                     StructField("text",          StringType, true),
+                                     StructField("time",          LongType,   true)
                                      
                                     )//end of Array definition
                              
@@ -168,12 +172,16 @@ class TweetStreamingApp(locationToObserve : String) extends TweetApp("streaming"
                                                                 status =>   Row(
                                                                                   status.getId,                         //tweet_id
                                                                                   status.getLang,                       //lang
+                                                                                  
                                                                                   status.getUser.getId,                 //user_id
                                                                                   status.getUser.getName,               //user_name 
-                                                                                  getBoundingBoxCoordinates(status)._1, //bb_latitude
+                                                                                  
                                                                                   getGeoLocationCoordinates(status)._1, //gl_latitude
-                                                                                  getBoundingBoxCoordinates(status)._2, //bb_longitude
                                                                                   getGeoLocationCoordinates(status)._2, //gl_longitude
+                                                                                  
+                                                                                  getPlaceCoordinates(status.getPlace)._1, //bb_latitude
+                                                                                  getPlaceCoordinates(status.getPlace)._2, //bb_longitude
+                                                                                  
                                                                                   status.getText,                       //text                
                                                                                   status.getCreatedAt.getTime            //data
                                                                                   )
@@ -304,23 +312,45 @@ class TweetStreamingApp(locationToObserve : String) extends TweetApp("streaming"
   
   
   
-  /*.................................................................................................................*/
+    /*.................................................................................................................*/
   /**
    * Method that
    * @return (Place latitude, Place longitude) if present, (None None) otherwise
    */
-  def getBoundingBoxCoordinates(status : twitter4j.Status) : (Double, Double) = {
+    def getPlaceCoordinates(place : twitter4j.Place) : (Option[Double], Option[Double], String) = {
     
     
-    if (status != null && status.getPlace != null && status.getPlace.getBoundingBoxCoordinates != null) {
-      return (status.getPlace.getBoundingBoxCoordinates.head.head.getLatitude, status.getPlace.getBoundingBoxCoordinates.head.head.getLongitude)
-    }
+  
+    
+    
+    if (place == null)  (None, None, "place null")
+    
     else {
-      return (null.asInstanceOf[Double], null.asInstanceOf[Double])
-    }
+       
+      val boundingBoxCoordinates  = place.getBoundingBoxCoordinates
+      val geometryCoordinates     = place.getGeometryCoordinates
+      val containerPlace          = place.getContainedWithIn
+        
+      //check Bounding Box Coordinates
+      if (boundingBoxCoordinates != null) (  Some(boundingBoxCoordinates.head.head.getLatitude),  Some(boundingBoxCoordinates.head.head.getLongitude),   "bounding box")
+      else {  
+              
+              //check Geometry Coordinates
+              if (geometryCoordinates != null)  (  Some(geometryCoordinates.head.head.getLatitude),  Some(geometryCoordinates.head.head.getLongitude),   "geometry")
+              else{
+                    
+                  //check Container Place
+                    if (containerPlace != null) getPlaceCoordinates(containerPlace.head)
+                    else (None, None, "everything is null")
+                  }
+            }
+        }
+      
+    
+  }// end getPlaceCoordinates
     
     
-  }// end getBoundingBoxCoordinates //
+
   
   
   
