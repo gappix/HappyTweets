@@ -86,11 +86,9 @@ class TweetStreamingApp(locationToObserve : String) extends TweetApp("streaming"
     
     val myLocation = new Location(augmentString(locationToObserve).toInt)
     
-    //optionally set word filters on input data
-    val filters = new Array[String](0)
-    
-    
-    
+    //optionally set word filters on input data  
+    val filters = new Array[String](1)
+    filters(0) = "locations=-0.637189,51.248325,0.311755,51.734844" 
     /*------------------------------------------------
      * Stream input and transformations
      *-----------------------------------------------*/
@@ -98,10 +96,10 @@ class TweetStreamingApp(locationToObserve : String) extends TweetApp("streaming"
     //input tweets 
     /*<<< INFO >>>*/ logInfo("Opening Twitter stream...")
     val streamTweets = TwitterUtils.createStream(ssc, None)//, filters, StorageLevel.MEMORY_ONLY_SER)    
+      
     /*<<< INFO >>>*/ logInfo("Stream opened!")
-
-
     
+
 
     
     
@@ -110,12 +108,12 @@ class TweetStreamingApp(locationToObserve : String) extends TweetApp("streaming"
                               /*.filter {t =>
                                          val tags = t.getText.split(" ").filter(_.startsWith("#")).map(_.toLowerCase)
                                          tags.contains("#bigdata")
-                                       }
+                                       }*/
 															
                               .filter { status => status.getLang match{   case "it"     => true
                                                                           case ""       => true
                                                                           case default  => false  }
-                              }*/
+                              }
                               //.filter { status =>  myLocation.checkLocation(status) }
                                //.filter {status => status.getUser == "Paolo Gazzotti"}
       
@@ -144,7 +142,9 @@ class TweetStreamingApp(locationToObserve : String) extends TweetApp("streaming"
                                      StructField("geolocation_lon", DoubleType, true),
                                      StructField("place_lat", DoubleType, true),
                                      StructField("place_lon", DoubleType, true),
-                                     StructField("place_info", StringType, true)
+                                     StructField("place_info", StringType, true),
+                                     StructField("text", StringType, true)
+                                   
                                      
                                     )//end of Array definition
                              
@@ -168,7 +168,9 @@ class TweetStreamingApp(locationToObserve : String) extends TweetApp("streaming"
                                                                                   
                                                                                   getPlaceCoordinates(status.getPlace)._1,
                                                                                   getPlaceCoordinates(status.getPlace)._2,
-                                                                                  getPlaceCoordinates(status.getPlace)._3
+                                                                                  getPlaceCoordinates(status.getPlace)._3,
+                                                                                  
+                                                                                  status.getText
                                                       
                                                                                   )
                                                                                   
@@ -179,7 +181,7 @@ class TweetStreamingApp(locationToObserve : String) extends TweetApp("streaming"
                                                                     
                                                                     
      readyTweetsDF.show(1000)
-     readyTweetsDF.count()
+    println("found " + readyTweetsDF.count() + " tweets!")
      
 
     
