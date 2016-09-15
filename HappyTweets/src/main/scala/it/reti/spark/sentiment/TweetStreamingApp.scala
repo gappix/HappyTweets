@@ -21,6 +21,11 @@ import org.apache.spark.storage.StorageLevel
 import org.apache.log4j.Logger
 import org.apache.spark.Logging
 
+// NEW! Gnip support for Twitter connection
+import com.knoldus.spark.streaming.gnip._
+
+
+
 
 
 case class HashtagTweets( tweet_id: Long, hashtagList: String)
