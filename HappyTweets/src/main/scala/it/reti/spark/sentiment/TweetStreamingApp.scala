@@ -253,7 +253,7 @@ class TweetStreamingApp(locationToObserve : String) extends TweetApp("streaming"
           
   
           //store DataFrames to HIVE tables
-          storeDataFrameToCASSANDRA( elaboratedTweets.allTweets, elaboratedTweets.sentimentTweets, bubbasDF) 
+          //storeDataFrameToCASSANDRA( elaboratedTweets.allTweets, elaboratedTweets.sentimentTweets, bubbasDF)
           
           //free memory
           readyTweetsDF.unpersist()
