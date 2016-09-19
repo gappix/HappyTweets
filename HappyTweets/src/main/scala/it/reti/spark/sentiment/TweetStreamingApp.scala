@@ -71,8 +71,8 @@ class TweetStreamingApp(locationToObserve : String) extends TweetApp("streaming"
       System.setProperty("twitter4j.oauth.consumerSecret", consumerSecret)
       System.setProperty("twitter4j.oauth.accessToken", accessToken)
       System.setProperty("twitter4j.oauth.accessTokenSecret", accessTokenSecret)
-      System.setProperty("twitter4j.http.proxyHost", "10.1.8.13");
-      System.setProperty("twitter4j.http.proxyPort", "8080");
+      //System.setProperty("twitter4j.http.proxyHost", "10.1.8.13");
+      //System.setProperty("twitter4j.http.proxyPort", "8080");
     
 
     
@@ -167,14 +167,14 @@ class TweetStreamingApp(locationToObserve : String) extends TweetApp("streaming"
        
        
           //Elaborate method invoked at every RDD
-          val elaboratedTweets = Elaborate(readyTweetsDF)
+          //val elaboratedTweets = Elaborate(readyTweetsDF)
            
           
           
           
   
           //store DataFrames to HIVE tables
-          storeDataFrameToCASSANDRA( elaboratedTweets.allTweets, elaboratedTweets.sentimentTweets) 
+          //storeDataFrameToCASSANDRA( elaboratedTweets.allTweets, elaboratedTweets.sentimentTweets) 
           
           //free memory
           readyTweetsDF.unpersist()

@@ -34,8 +34,8 @@ object Main extends Logging{
         }
         //STREAMING case
         case "streaming" => {
-          println("\nSelect country to spy: \n \t\t 1: Australia \n \t\t 2: London \n \t\t 3: USA \n \t\t 5: United Kingdom \n ")
-          val location = Console.readLine()
+          //println("\nSelect country to spy: \n \t\t 1: Australia \n \t\t 2: London \n \t\t 3: USA \n \t\t 5: United Kingdom \n ")
+          val location = "3"
           new TweetStreamingApp(location)
         }
         //Otherwise
@@ -53,6 +53,8 @@ object Main extends Logging{
       //SPARK Contexts creation and LogHandler settings
       val context = ContextHandler.setAllContexts
       val logHandler = LogHandler
+      
+      Title.printTitle
 
       
       //run execution
