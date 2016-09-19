@@ -79,8 +79,8 @@ class TweetStreamingApp(locationToObserve : String) extends TweetApp("streaming"
       System.setProperty("twitter4j.oauth.consumerSecret", consumerSecret)
       System.setProperty("twitter4j.oauth.accessToken", accessToken)
       System.setProperty("twitter4j.oauth.accessTokenSecret", accessTokenSecret)
-      System.setProperty("twitter4j.http.proxyHost", "10.1.8.13");
-      System.setProperty("twitter4j.http.proxyPort", "8080");
+      System.setProperty("twitter4j.http.proxyHost", "10.1.8.13")
+      System.setProperty("twitter4j.http.proxyPort", "8080")
     
 
     

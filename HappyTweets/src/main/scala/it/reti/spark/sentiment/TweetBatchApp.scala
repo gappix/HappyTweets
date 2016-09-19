@@ -98,6 +98,8 @@ class TweetBatchApp(fileNameAndPath : String) extends TweetApp("batch") {
     //evaluate sentiment
     val elaboratedTweets = Elaborate(readyTWEETS)
     
+    
+    
     //store DataFrames into CASSANDRA tables
     //storeDataFrameToCASSANDRA(elaboratedTweets.allTweets, elaboratedTweets.sentimentTweets)
     
