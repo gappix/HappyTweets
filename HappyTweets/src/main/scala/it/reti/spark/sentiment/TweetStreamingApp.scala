@@ -224,7 +224,7 @@ class TweetStreamingApp(locationToObserve : String) extends TweetApp("streaming"
                                              
                                                                     
                                                                     
-        val identifyNull = udf (( hashtag: String) =>{  if (hashtag.length() > 0) hashtag
+        val identifyNull = udf (( hashtag: String) =>{  if (hashtag.length() > 0) hashtag.toLowerCase()
                                                         else null        }
                                 )
                                                                                                             
