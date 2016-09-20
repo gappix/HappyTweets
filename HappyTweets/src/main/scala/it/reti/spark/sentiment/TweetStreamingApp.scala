@@ -18,17 +18,16 @@ import org.apache.spark.streaming.Seconds
 import org.apache.spark.streaming.StreamingContext
 import org.apache.spark.streaming.twitter.TwitterUtils
 import org.apache.spark.storage.StorageLevel
-import org.apache.log4j.Logger
 import org.apache.spark.Logging
 
 
-
-case class HashtagTweets( tweet_id: Long, hashtagList: String)
-
-
+/*||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||*/
+case class HashtagTweets( tweet_id: Long, hashtagList: String, text: String)
 
 
-/*°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°*/
+
+
+/*||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||*/
 /**
  * This class is an extension of TweetApp one.
  * It implements a specific Run method for streaming data retrieving from a twitter stream spout.
@@ -50,7 +49,7 @@ class TweetStreamingApp(locationToObserve : String) extends TweetApp("streaming"
    * Each DataFrame structure is then passed to upper-class "elaborate" method in order to retrieve sentiment evaluation.
    * Results are eventually stored into HIVE tables by invoking upper-class "storeDataFrameToHIVE" method.
    */
-  override def Run() {  
+  override def prepareData() {
     
     
     //interval settings
@@ -136,7 +135,7 @@ class TweetStreamingApp(locationToObserve : String) extends TweetApp("streaming"
     
     
    /*...........................................
-     * DataFrame creation
+     * DataFrame definition
      *.........................................*/     
     
     val schema = StructType( 
@@ -153,18 +152,24 @@ class TweetStreamingApp(locationToObserve : String) extends TweetApp("streaming"
                                      StructField("place_longitude",  DoubleType, true), 
                                      
                                      StructField("text",          StringType, true),
-                                     StructField("time",          LongType,   true)
+                                     StructField("time",          LongType,   true),
+  
+  
+                                StructField("hashtagList", StringType, true)
                                      
                                     )//end of Array definition
                              
                                     
                             )//end of StructType       
-          
-                              
-                              
-    
-                            
-                            
+  
+  
+  
+  
+  /*...........................................
+	 * DataFrame definition
+	 *.........................................*/
+      
+      
     //ready tweet with correct info extraction
     val readyTweetsDF = sqlContextHIVE.createDataFrame(  
                                                         rdd.map(   
@@ -183,89 +188,37 @@ class TweetStreamingApp(locationToObserve : String) extends TweetApp("streaming"
                                                                                   getPlaceCoordinates(status.getPlace)._2, //bb_longitude
                                                                                   
                                                                                   status.getText,                       //text                
-                                                                                  status.getCreatedAt.getTime            //data
+                                                                                  status.getCreatedAt.getTime, //data
+                                                                  
+                                                                                  status.getHashtagEntities
+                                                                                        .map( x => x.getText)
+                                                                                        .mkString(" ")
+                                                                                        .toLowerCase()// hastag list separated by " "
                                                                                   )
                                                                                   
                                                                  ), schema)//end of createDataFrame
-      
-                                                        
-                                                                    
-                                                                    
-                                                                    
-                                                                    
-                                                                    
-                                                                    
-     val tweetHashtagsDF = rdd.map( status => HashtagTweets( status.getId, 
-                                                             status.getHashtagEntities
-                                                                   
-                                                             
-                                                             
-                                                             
-                                                                  /*.filter { x => x.toString().toLowerCase() match  {
-                                                                                                  case "greenday"    => true
-                                                                                                  case "bigdata"     => true
-                                                                                                  case "raggirati"   => true
-                                                                                                  case default       => false }  }*/
-                                                                 .map { x => x.getText }
-                                                                 .mkString(" ")
-                                                                 
-     
-                                                              )).toDF()
-     
-     
-
- 
-                                  
-                                  
-                                  
-                                                                    
-     val tweetsHashtagsDF = tweetHashtagsDF.explode("hashtagList", "hashtag"){hashtagList: String => hashtagList.split(" ")}//explode  hashtag_list (n-words)(1-row) field in 
-                                                                                                                            //         hashtag     (1-word)(n-rows) one
-                                             
-                                                                    
-                                                                    
-        val identifyNull = udf (( hashtag: String) =>{  if (hashtag.length() > 0) hashtag.toLowerCase()
-                                                        else null        }
-                                )
-                                                                                                            
-                                                                   
-    
-      
-      
-      
-      /*<< INFO >>*/logInfo("Received " + readyTweetsDF.persist().count.toString() + " tweets") 
-      readyTweetsDF.show()
-      tweetsHashtagsDF.show()                                                             
-      val bubbasDF = tweetsHashtagsDF.filter(not(isnull(identifyNull(tweetsHashtagsDF("hashtag"))))).select($"tweet_id", $"hashtag")
-      bubbasDF.show()
-      
-     //checking if there is any message to process 
-     if(readyTweetsDF.count() > 0){
-       
-
-       
-       
-          //Elaborate method invoked at every RDD
-          val elaboratedTweets = Elaborate(readyTweetsDF)
-           
-          
-          
-          
   
-          //store DataFrames to HIVE tables
-          storeDataFrameToCASSANDRA( elaboratedTweets.allTweets, elaboratedTweets.sentimentTweets, bubbasDF) 
-          
-          //free memory
-          readyTweetsDF.unpersist()
-          /*<<< INFO >>>*/ logInfo(rdd.toString() +  " Processing completed!")
-       
-          
-      }//end if
+      
+  
+  
+  
+        /*.........................................-..........
+         check if there is any message to process;
+         if true run the elaborator method of the parent class
+        *......................................................*/
+        
+       if(readyTweetsDF.count() > 0){
+         
+         
+            val elaboratedTweets = runElaborator(readyTweetsDF)
+            /*<<< INFO >>>*/ logInfo(rdd.toString() +  " Processing completed!")
+  
+        }
     
     
     
     
-     /*<<< INFO >>>*/ logInfo("\n\n ========================================== END ROUND ============================================>>>\n\n\n")
+        /*<<< INFO >>>*/ logInfo("\n\n ========================================== END ROUND ============================================>>>\n\n\n")
     
 
        
@@ -285,7 +238,11 @@ class TweetStreamingApp(locationToObserve : String) extends TweetApp("streaming"
     ssc.awaitTermination()
     
     
-  }//end Run overrided method //
+    
+    
+  }//end Run (overrided) method //
+  
+  
   
   
   
@@ -307,6 +264,7 @@ class TweetStreamingApp(locationToObserve : String) extends TweetApp("streaming"
     
 
   }// end getGeoLocationCoordinates method //
+  
   
   
   
@@ -355,5 +313,5 @@ class TweetStreamingApp(locationToObserve : String) extends TweetApp("streaming"
   
   
    
-}//end TweetStreamingApp class //
+}//end TweetStreamingApp class |||||||||||||
 

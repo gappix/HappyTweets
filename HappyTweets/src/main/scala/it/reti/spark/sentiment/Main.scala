@@ -22,8 +22,9 @@ object Main extends Logging{
   def main(args: Array[String])  {
     
     
-    /*INPUT parameter check:
-     * according to input parameter string a different TweetApp extension class is instantiated.
+    /*
+    INPUT parameter check:
+     according to input parameter string a different TweetApp extension class is instantiated.
      */
      val app = args(0) match {
       
@@ -56,7 +57,7 @@ object Main extends Logging{
 
       
       //run execution
-      if(context.equals("ok") ) app.Run()
+      if(context.equals("ok") ) app.prepareData()
     }
     
     

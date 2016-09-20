@@ -10,7 +10,7 @@ import scala.reflect.runtime.universe
 import org.apache.spark.sql.hive.HiveContext
   
 
-///////////////////// ///////////////// TWEET BATCH APP //////////////////////////////////////////////////////////////
+/* ||||||||||||||||||||||||||||||||||||||||| TWEET BATCH APP |||||||||||||||||||||||||||||||||||||||||||||||||||||||||*/
 /**
  * This class is an extension of TweetApp one.
  * It implements a specific Run method for batch data extraction from a file database.
@@ -18,7 +18,7 @@ import org.apache.spark.sql.hive.HiveContext
  * 
  * @param fileNameAndPath: path to retrieve input json-dataFile
  */
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////  
+  
 class TweetBatchApp(fileNameAndPath : String) extends TweetApp("batch") {  
   
   
@@ -32,7 +32,7 @@ class TweetBatchApp(fileNameAndPath : String) extends TweetApp("batch") {
    * This structure is then passed to upper-class "elaborate" method in order to retrieve sentiment evaluation.
    * Results are eventually stored into HIVE tables by invoking upper-class "storeDataFrameToHIVE" method.
    */
-  override def Run() {
+  override def prepareData() {
     
     
     //HIVE Context import
@@ -96,17 +96,12 @@ class TweetBatchApp(fileNameAndPath : String) extends TweetApp("batch") {
     
     
     //evaluate sentiment
-    val elaboratedTweets = Elaborate(readyTWEETS)
+    val elaboratedTweets = runElaborator(readyTWEETS)
     
     
-    
-    //store DataFrames into CASSANDRA tables
-    //storeDataFrameToCASSANDRA(elaboratedTweets.allTweets, elaboratedTweets.sentimentTweets)
-    
-   
 
   }// end Run method //
 
 
 
-}// end TweetBatchApp class //
+}// end TweetBatchApp class ||||||||||||||||

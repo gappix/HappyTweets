@@ -44,7 +44,7 @@ object Sentix extends Serializable with Logging{
     
     
     //load textfile RDD
-    private val inputSENTIX = sc.textFile("/home/administrator/BigData/Sentix.txt")
+    private val inputSENTIX = sc.textFile("/user/maria_dev/Tutorials/SPARKTwitterAnalyzer/Sentix.txt")  //"/home/administrator/BigData/Sentix.txt"
     
     
     

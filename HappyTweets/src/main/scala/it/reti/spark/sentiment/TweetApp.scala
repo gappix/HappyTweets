@@ -12,7 +12,7 @@ import org.apache.spark.Logging
 
 
 
-/*°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°*/
+/*||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||*/
 /**
  *   This abstract class contains all main methods for processing execution.
  *   It must be extended implementing the Run method according to desired execution.
@@ -28,6 +28,14 @@ abstract class TweetApp(processingType : String) extends Serializable with Loggi
   
   
   
+  //get sqlHIVE context and import methods for DataFrame/RDD conversion
+  val sqlContextHIVE = ContextHandler.getSqlContextHIVE
+  import sqlContextHIVE.implicits._
+  
+  
+
+
+  
   
   
   
@@ -36,7 +44,10 @@ abstract class TweetApp(processingType : String) extends Serializable with Loggi
   * Method TRAIT.
   * MUST BE OVERRIDED in class extension.
   */
-  def Run()
+  def prepareData()
+  
+  
+  
   
   
   
@@ -46,164 +57,374 @@ abstract class TweetApp(processingType : String) extends Serializable with Loggi
   
   /*.................................................................................................................*/
   /**
-   * Method which elaborates tweet DataFrames evaluating sentiment values.
-   * It  joins tweets with an "Hedonometer dictionary" which assign to each word an happiness value. 
-   * All values are then averaged obtaining an approximate sentiment value for each tweet message.
+   * Method which elaborates tweet DataFrames evaluating sentiment values, hashtags and topics.
+   *
    * 
-   * @param allTWEETS	DataFrame with all tweet potentially useful fields
-   * @return a tuple containing 2 DataFrames: processed tweets and sentiment evaluations
+   * @param rawTweetsDF	DataFrame with all tweet potentially useful fields
    */
-  def Elaborate( allTWEETS : DataFrame) : {val allTweets : DataFrame; val sentimentTweets : DataFrame} = {
+  def runElaborator(rawTweetsDF : DataFrame)  = {
+    
+    
+    /*
+    It  joins tweets with an "Hedonometer dictionary" which assign to each word an happiness value.
+    All values are then averaged obtaining an approximate sentiment value for each tweet message.
+    
+     */
+  
+  
+  
+
+                               
+    /*.............................................*
+     * Original DataFrame transformations
+     *.............................................*/
+                               
+    /*
+     Selecting desired fields:
+     if available, take GeoLocation infos (which are most accurate)
+     otherwise take Place.BoundingBox ones
+     
+     This DataFrame is ready to be stored in "tweets_processed" table
+     */
+    val readyTweetsDF = rawTweetsDF.select(
+                                            $"tweet_id",
+                                            $"lang",
+                                            $"user_id",
+                                            $"user_name",
+                                          
+                                            when($"geo_latitude".isNull, $"place_latitude")
+                                              .otherwise($"geo_latitude")
+                                              .as("latitude"),
+                                          
+                                            when($"geo_longitude".isNull, $"place_longitude")
+                                              .otherwise($"geo_longitude")
+                                              as("longitude"),
+                                          
+                                            $"text",
+                                            $"time"
+                                            ).persist()
+  
+  
+    /*<< INFO >>*/logInfo("Received " + readyTweetsDF.count.toString() + " tweets")
+    readyTweetsDF.show()
+  
+  
+
+    
+    
+  
+  
+    /*.............................................*
+     * SENTIMENT evaluation
+     *.............................................*/
+    
+    val sentimentDF = elaborateSentiment(readyTweetsDF)
     
     
     
-    //get sqlHIVE context and import methods for DataFrame/RDD conversion 
-    val sqlContextHIVE = ContextHandler.getSqlContextHIVE
-    import sqlContextHIVE.implicits._
     
-    //getting the hedonometer
+    
+    
+    
+    /*.............................................*
+     * HASHTAG detection
+     *.............................................*/
+    val hashtagDF = elaborateHashtags( rawTweetsDF)
+  
+    
+  
+  
+  
+  
+  
+    /*.............................................*
+     * TOPICS detection
+     *.............................................*/
+  
+    val topicsDF = elaborateTopics(rawTweetsDF)
+  
+  
+  
+    
+  
+  
+    /*.............................................*
+      STORE results to DB
+     *.............................................*/
+    
+    storeDataFrameToCASSANDRA(readyTweetsDF, sentimentDF, hashtagDF, topicsDF)
+
+
+
+
+    
+    
+  }  //end runElaborator method //
+  
+  
+  
+  
+  
+  /*..................................................................................................................*/
+	/**
+		*This method evaluates, for each tweet, its average sentiment value with a confidency indicator
+    *
+		* @param inputTweetsDF a DataFrame with all tweet infos
+		* @return a DataFrame with sentiment infos composed by following fields:
+    *         "tweet_id", "sentiment_value", "matched_words", "tweet_words", "confidency_value"
+		*/
+  def elaborateSentiment(inputTweetsDF: DataFrame) : DataFrame = {
+  
+    
+    
+    /*
+    
+    
+     */
+    
+    //getting the hedonometer dictionary (as DataFrame)
     val sentixDF = Sentix.getSentix
+    
     
     
     
     /*------------------------------------------------*
      * UDF definitions
      *------------------------------------------------*/
-    
-    //confidency field value evaluator for each row
+  
+    /**
+      *
+      */
     val confidencyValue = udf( (matched_words: Double, tweet_words: Double) =>{  matched_words/tweet_words  })
-    
-    
+  
+  
     //sanitization by lower case and regular expression (only dictionary word extracted)
     val sanitizeTweet = udf (( word: String) =>{
-                                                  val regularExpression = "\\w+(\'\\w+)?".r 
-                                                  val sanitizedWord = regularExpression.findFirstIn(word.toLowerCase)
-                                                  val emptyWord = ""
-                                                  sanitizedWord match 
-                                                  {
-                                                      case None            => emptyWord
-                                                      case Some(something) => something     }
-                                               })
+      val regularExpression = "\\w+(\'\\w+)?".r
+      val sanitizedWord = regularExpression.findFirstIn(word.toLowerCase)
+      val emptyWord = ""
+      sanitizedWord match
+      {
+        case None            => emptyWord
+        case Some(something) => something     }
+    })
+  
+  
     
-                               
+    
+    
+    
     /*---------------------------------------------------*
-     * DataFrame transformations 
-     *---------------------------------------------------*/                               
-                               
+     * Tweet words sanitization
+     *---------------------------------------------------*/
+  
     /*
-     * Selecting desired fields:
-     * if available, take GeoLocation infos (which are most accurate)
-     * otherwise take Place.BoundingBox ones
-     */    
-    val readyTWEETS = allTWEETS.select(
-        $"tweet_id",
-        $"lang",
-        $"user_id",
-        $"user_name",
-        when($"geo_latitude".isNull, $"place_latitude").otherwise($"geo_latitude").as("latitude"),
-        when($"geo_longitude".isNull, $"place_longitude").otherwise($"geo_longitude").as("longitude"),
-        $"text",
-        $"time"
-        )
-        
-     
-    
-
-    
-    //explode each tweet by having one word for each row
-    val explodedTWEETS = readyTWEETS
-                       .select($"tweet_id", $"text")//only tweet_id and lowered text needed
-                       .explode("text", "word"){text: String => text.split(" ")}//explode  text(n-words)(1-row) field in 
-                                                                                //         word(1-word)(n-rows) one
-
-    
- 
+    explode  text(n-words)(1-row) field in
+             word(1-word)(n-rows) one
+     */
+    val explodedTWEETS = inputTweetsDF.select($"tweet_id", $"text")
+                                      .explode("text", "word"){text: String => text.split(" ")}
+  
+  
+  
+  
+  
+    //sanitize words by udf
+    val sanitizedTWEETS = explodedTWEETS.select($"tweet_id", sanitizeTweet(explodedTWEETS("word")).as("word"))
+  
+  
+  
+  
+  
+  
+  
+    /*---------------------------------------------------*
+     * Sentiment evaluation
+     *---------------------------------------------------*/
+  
+    //count tweets words in a new DataFrame
+    val wordCountByTweetDF = countTweetsWords(sanitizedTWEETS)
     
     
-    //sanitize words by udf 
-    val sanitizedTWEETS = explodedTWEETS
-                           .select($"tweet_id", sanitizeTweet(explodedTWEETS("word")).as("word"))
     
-
-    //count original tweet words
-    val wordCountByTweetDF = sanitizedTWEETS
-                               .groupBy("tweet_id").count()
-                               .withColumnRenamed("count","tweet_words")
     
-
-
-   /*---------------------------------------------------*
-    * Sentiment evaluation
-    *---------------------------------------------------*/
-    
-    /*<<INFO>>*/ logInfo("Joining Dataframes " + sentixDF.toString() + " and " + sanitizedTWEETS.toString())
-                               
-    //joining tweets with Hedonometer dictionary                           
+    //joining tweets with Hedonometer dictionary
     val sentimentTWEETS = sentixDF
-                               .join(sanitizedTWEETS, sentixDF("sentix_word") === sanitizedTWEETS("word"), "inner")
-                               .groupBy("tweet_id")
-                               .agg( "absolute_sentiment"  -> "avg",
-                                     "word"             -> "count" )
-                               .withColumnRenamed("avg(absolute_sentiment)","sentiment_value")
-                               .withColumnRenamed("count(word)","matched_words")
+                                  .join(sanitizedTWEETS, sentixDF("sentix_word") === sanitizedTWEETS("word"), "inner")
+                                  .groupBy("tweet_id")
+                                  .agg( "absolute_sentiment"  -> "avg",
+                                        "word"                -> "count" )
+                                  .withColumnRenamed("avg(absolute_sentiment)","sentiment_value")
+                                  .withColumnRenamed("count(word)","matched_words")
     
     
     
     //pack results into a new DataFrame
     val sentimentConfidencyTWEETS = sentimentTWEETS
-                                      .join( wordCountByTweetDF, "tweet_id")
-                                      .select( $"tweet_id",
-                                               $"sentiment_value",
-                                               $"matched_words",
-                                               $"tweet_words",
-                                               confidencyValue($"matched_words", $"tweet_words").as("confidency_value")
-                                      )
+                                                .join( wordCountByTweetDF, "tweet_id")
+                                                .select(  $"tweet_id",
+                                                          $"sentiment_value",
+                                                          $"matched_words",
+                                                          $"tweet_words",
+                                                          confidencyValue($"matched_words", $"tweet_words").as("confidency_value")
+                                                        )
+
     
-          
-    //packing returning DataFrames into single struct      
-    new {
-      val allTweets = readyTWEETS
-      val sentimentTweets = sentimentConfidencyTWEETS
+    sentimentConfidencyTWEETS
+    
+  }//end elaborateSentiment method //
+  
+  
+  
+  
+  
+	
+	
+	
+	
+  
+  /*..................................................................................................................*/
+  /**
+    * This method counts, for each tweet_id, how many words its text is formed by
+    *
+    * @param inputDF: DataFrame with following fields: "tweet_id", "word" (already sanitized)
+    * @return a DataFrame with two fields: "tweet_id", "tweet_words"
+    */
+  def countTweetsWords(inputDF: DataFrame): DataFrame = {
+    
+    
+
+    //count original tweet words
+    val wordCountByTweetDF = inputDF.groupBy("tweet_id").count()
+                                    .withColumnRenamed("count","tweet_words")
+    
+
+    
+    wordCountByTweetDF
+    
+    
+  }//end method //
+  
+  
+  
+  
+  
+  
+  
+
+
+  
+  
+  /*..................................................................................................................*/
+	/**
+		* This method provides a DataFrame with a full hashtag column, mantaining the correct association with
+		* their tweet_id.
+		*
+		* @param inputDF DataFrame with all tweets info (included hashtagList!)
+		* @return DataFrame which associates each tweet_id with its own hashtags
+		*
+		* @note there could be more than one row per tweet_id! there will be one row for each associated hashtag
+		*/
+  def elaborateHashtags(inputDF:  DataFrame): DataFrame = {
+	  
+	  
+	  
+	  /*---------------------------------------------------*
+     * UDF DEFINITION
+     *---------------------------------------------------*/
+    val identifyNull = udf (( hashtag: String) =>{  if (hashtag.length() > 0) hashtag.toLowerCase()
+    else null        }
+    )
+    
+    
+    
+    
+    val tweetsHashtagsDF = inputDF.select($"tweet_id", $"text", $"hashtagList").explode("hashtagList", "hashtag") {
+      
+      //explode  hashtag_list (n-words)(1-row) field in
+      //         hashtag     (1-word)(n-rows) one
+      hashtagList: String => hashtagList.split(" ")
+      
     }
     
+
     
-  }
-  //end elaborate method //
+    
+    
+    tweetsHashtagsDF.show()
+    val filteredHashtagDF = tweetsHashtagsDF.filter(not(isnull(identifyNull(tweetsHashtagsDF("hashtag"))))).select($"tweet_id", $"hashtag")
+    filteredHashtagDF.show()
+    
+    
+    
+    
+    
+    filteredHashtagDF
+    
+  }// end hashtagExplode  method //
   
   
   
   
   
-/*.................................................................................................................*/
+  
+  
+  
+  
+  /*..................................................................................................................*/
   /**
-   * Method which stores DataFrames with elaborated values into CASSANDRA tables 
-   * 
-   * @param tweetProcessedDF	DataFrame containing already processed tweets with final values
-   * @param sentimentDF				DataFrame containing tweet sentiment and confidency evaluation 
-   * 
-   */
-  def storeDataFrameToCASSANDRA ( tweetProcessedDF: DataFrame,  sentimentDF: DataFrame, hashtagDF: DataFrame) {
-     
+	  * This method provides a DataFrame with a full topic column, mantaining the correct association with
+	  * their tweet_id.
+	  *
+    * @param inputDF a DataFrame with all tweets info (included hashtagList!)
+    * @return DataFrame which associates each tweet_id with its own topics
+	  *
+	  * @note there could be more than one row per tweet_id! there will be one row for each associated topic
+    */
+  def elaborateTopics(inputDF: DataFrame): DataFrame ={
     
+    val topicDF = TopicFinder.findTopic(inputDF)
     
+    topicDF
     
-    //call the DataStore object passing the Dataframe to store
-    
-    
-    /*<<INFO>>*/  logInfo("Opening tweet storing procedure...")
-    myDataStorer.storeTweetsToCASSANDRA(tweetProcessedDF)
-    /*<<INFO>>*/  logInfo("tweets storing closed!")
+  }// end elaborateTopics method //
+  
+
+  
+	
+	
+	
+  
+  
+  /*....................................................................................................................*/
+  /**
+    * Method which stores DataFrames with elaborated values into CASSANDRA tables
+    *
+    * @param tweetProcessedDF DataFrame containing already processed tweets with final values
+    * @param sentimentDF      DataFrame containing tweet sentiment and confidency evaluation
+    * @param hashtagDF        DataFrame containing tweet id and related hashtags
+    * @param topicsDF          DataFrame containing tweet id and  related topics
+    */
+  def storeDataFrameToCASSANDRA ( tweetProcessedDF: DataFrame,  sentimentDF: DataFrame, hashtagDF: DataFrame, topicsDF: DataFrame) {
+  
+  
+    tweetProcessedDF.show()
+    //myDataStorer.storeTweetsToCASSANDRA(tweetProcessedDF)
+    /*<<INFO>>*/  logInfo("tweets storing completed!")
+  
+    sentimentDF.show()
+    //myDataStorer.storeSentimentToCASSANDRA(sentimentDF)
+    /*<<INFO>>*/  logInfo("sentiment storing completed!")
+  
+    hashtagDF.show()
+    //myDataStorer.storeHashtagToCASSANDRA(hashtagDF)
+    /*<<INFO>>*/  logInfo("hashtag storing completed!")
+  
+    topicsDF.show()
+    //myDataStorer.storeTopicsToCASSANDRA(topicsDF)
+    /*<<INFO>>*/  logInfo("topics storing completed!")
 
     
-    /*<<INFO>>*/  logInfo("Opening sentiment storing procedure...")
-    myDataStorer.storeSentimentToCASSANDRA(sentimentDF)
-    /*<<INFO>>*/  logInfo("sentiment storing closed!")
-    
-    
-    /*<<INFO>>*/  logInfo("Opening hashtag storing procedure...")
-    myDataStorer.storeHashtagToCASSANDRA(hashtagDF)
-    /*<<INFO>>*/  logInfo("sentiment storing closed!")
-
     
     
   }//end storeDataFrameToCASSANDRA method //
@@ -212,4 +433,4 @@ abstract class TweetApp(processingType : String) extends Serializable with Loggi
   
   
   
-}//end  TweetApp Class //
+}//end  TweetApp Class |||||||||||||||||||||||||
