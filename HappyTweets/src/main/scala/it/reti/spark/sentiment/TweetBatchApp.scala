@@ -32,7 +32,7 @@ class TweetBatchApp(fileNameAndPath : String) extends TweetApp("batch") {
    * This structure is then passed to upper-class "elaborate" method in order to retrieve sentiment evaluation.
    * Results are eventually stored into HIVE tables by invoking upper-class "storeDataFrameToHIVE" method.
    */
-  override def prepareData() {
+  override def acquireData() {
     
     
     //HIVE Context import
@@ -40,26 +40,6 @@ class TweetBatchApp(fileNameAndPath : String) extends TweetApp("batch") {
     import sqlContextHIVE.implicits._
 
     
-    /*---------------------------------------------------------------------------------
-     * UDF definition: function needed for desired dataframe selection
-     *---------------------------------------------------------------------------------*/
-
-    //function for unboxing bounding box structure in order to get Place Latitude information
-    val extract_bounding_box_latitude = udf((box: Seq[Seq[Seq[Double]]]) => {
-      box.head.head.last
-    })
-    //function for unboxing bounding box structure in order to get Place Longitude information
-    val extract_bounding_box_longitude = udf((box: Seq[Seq[Seq[Double]]]) => {
-      box.head.head.head
-    })
-    //function for unboxing bounding box structure in order to get Geo Local Latitude information
-    val extract_geo_localization_latitude = udf((box: Seq[Double]) => {
-      box.last
-    })
-    //function for unboxing bounding box structure in order to get Geo Local Longitude information
-    val extract_geo_localization_longitude = udf (( box: Seq[Double]) =>{
-      box.head
-    })
     
     
     
@@ -79,24 +59,7 @@ class TweetBatchApp(fileNameAndPath : String) extends TweetApp("batch") {
     
     
    //DataFrame is created by selecting interested fields from input DataFrame
-    val readyTWEETS = englishTWEETS.select( 
-        $"id".as("tweet_id"), 
-        $"lang", 
-        $"user.id".as("user_id"), 
-        $"user.name".as("user_name"),
-        //if any coordinate value exists, unbox it using udf functions defined above
-        when($"place.bounding_box.coordinates".isNotNull, extract_bounding_box_latitude(englishTWEETS("place.bounding_box.coordinates"))).as("bb_latitude"),
-        when($"coordinates.coordinates".isNotNull, extract_geo_localization_latitude(englishTWEETS("coordinates.coordinates"))).as("gl_latitude"),
-        when($"place.bounding_box.coordinates".isNotNull, extract_bounding_box_longitude(englishTWEETS("place.bounding_box.coordinates"))).as("bb_longitude"),
-        when($"coordinates.coordinates".isNotNull, extract_geo_localization_longitude(englishTWEETS("coordinates.coordinates"))).as("gl_longitude"),
-        $"text"
-    )// end select
-    
-    
-    
-    
-    //evaluate sentiment
-    val elaboratedTweets = runElaborator(readyTWEETS)
+    prepareJsonData(englishTWEETS)
     
     
 

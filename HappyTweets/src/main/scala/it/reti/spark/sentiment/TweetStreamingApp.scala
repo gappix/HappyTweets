@@ -49,44 +49,31 @@ class TweetStreamingApp(locationToObserve : String) extends TweetApp("streaming"
    * Each DataFrame structure is then passed to upper-class "elaborate" method in order to retrieve sentiment evaluation.
    * Results are eventually stored into HIVE tables by invoking upper-class "storeDataFrameToHIVE" method.
    */
-  override def prepareData() {
-    
-    
+  override def acquireData() {
+  
+  
+  
     //interval settings
-    val intervalSeconds = 25 /* <---- set this to best interval for your operation */ 
+    val intervalSeconds = 25 /* <---- set this to best interval for your operation */
+  
+    //port for socket listener
+    val portToListen = 9999
+    
+    
     
     //import context needed
     val sc = ContextHandler.getSparkContext
     val ssc = new StreamingContext(sc, Seconds(intervalSeconds))
-    val sqlContextHIVE = ContextHandler.getSqlContextHIVE  
+    val sqlContext = ContextHandler.getSqlContextHIVE
     import sqlContextHIVE.implicits._
-
-  
-     /*----------------------------------------------------
-     * Twitter Auth Settings
-     * >>>>>>> maybe in a .properties file?
-     *----------------------------------------------------*/
     
-      //twitter auth magic configuration
-      val consumerKey = "UhAKuJjpHsnursRKZnU5Rnv1M"                               // "hARrkNBpwsh8lLldQt7fTe4iM"
-      val consumerSecret = "lklbynejp0GwDedxhU8J2bmj0rxZa0IwrUNH32HEBWQ2LQZnpg"   //"p0BRXCYEePUrJXPHQBxdIkP14idAYaSi934VJU2Hm2LBCUuqg0"
-      val accessToken = "92626442-N7ozJgcKRnxkVPiSUVybjDHf5oWFA83l99M9j9v26"      // "72019464-oUaReZ3i91fcVKg3Y7mBOzxlNrNXMpa5sxOcIld3R"
-      val accessTokenSecret = "u1sQeB8QpaSiKrp2VuwPnupSFdAbHOGiXDUBBzmywmlGc"    // "338I4ldbMc3CDpGYrpx5BuDfYbcAAZbJRDW86i9EY6Nwf"
-      
-      //setting system properties so that Twitter4j library can use general OAuth credentials
-      System.setProperty("twitter4j.oauth.consumerKey", consumerKey)
-      System.setProperty("twitter4j.oauth.consumerSecret", consumerSecret)
-      System.setProperty("twitter4j.oauth.accessToken", accessToken)
-      System.setProperty("twitter4j.oauth.accessTokenSecret", accessTokenSecret)
-      System.setProperty("twitter4j.http.proxyHost", "10.1.8.13")
-      System.setProperty("twitter4j.http.proxyPort", "8080")
+    
+    
+    
     
 
     
-    val myLocation = new Location(augmentString(locationToObserve).toInt)
     
-    //optionally set word filters on input data
-    val filters = new Array[String](0)
     
     
     
@@ -94,139 +81,50 @@ class TweetStreamingApp(locationToObserve : String) extends TweetApp("streaming"
      * Stream input and transformations
      *-----------------------------------------------*/
     
-    //input tweets 
+    
     /*<<< INFO >>>*/ logInfo("Opening Twitter stream...")
-    val streamTweets = TwitterUtils.createStream(ssc, None)//, filters, StorageLevel.MEMORY_ONLY_SER)    
+    val myReceiver = new SocketReceiver(portToListen)
+    val tweetsStream = ssc.receiverStream(myReceiver)
     /*<<< INFO >>>*/ logInfo("Stream opened!")
+  
+  
+  
+  
 
     
-    
-    
-
-    
-    
-    //filtering by language and coordinates
-    val englishTweets = streamTweets 
-                              /*.filter {t =>
-                                         val tags = t.getText.split(" ").filter(_.startsWith("#")).map(_.toLowerCase)
-                                         tags.contains("#bigdata")
-                                       }
-															*/
-                              .filter { status => status.getLang match{   case "it"     => true
-                                                                          case ""       => true
-                                                                          case default  => false  }
-                              }
-                              //.filter { status =>  myLocation.checkLocation(status) }
-                               //.filter {status => status.getUser == "Paolo Gazzotti"}
-      
-                            
-   
     
    /*----------------------------------------------------
  	  * Transformations for each RDD
    	*---------------------------------------------------*/     
-    englishTweets.foreachRDD { rdd    => 
-
+    tweetsStream.foreachRDD { rdd    =>
+  
+                                          /*<<< INFO >>>*/ logInfo(rdd.toString() +  " started!")
+                                          val dataDF  = sqlContext.read.json(rdd)
     
 
-    /*<<< INFO >>>*/ logInfo(rdd.toString() +  " started!")
-    
-    
-    
-    
-   /*...........................................
-     * DataFrame definition
-     *.........................................*/     
-    
-    val schema = StructType( 
-                              Array( StructField("tweet_id",      LongType,   true), 
-                                     StructField("lang",          StringType, true),
-                                     
-                                     StructField("user_id",       LongType,   true),
-                                     StructField("user_name",     StringType, true),
-                                     
-                                     StructField("geo_latitude",   DoubleType, true),
-                                     StructField("geo_longitude",  DoubleType, true),
-                                     
-                                     StructField("place_latitude",   DoubleType, true),    
-                                     StructField("place_longitude",  DoubleType, true), 
-                                     
-                                     StructField("text",          StringType, true),
-                                     StructField("time",          LongType,   true),
-  
-  
-                                StructField("hashtagList", StringType, true)
-                                     
-                                    )//end of Array definition
-                             
-                                    
-                            )//end of StructType       
-  
-  
-  
-  
-  /*...........................................
-	 * DataFrame definition
-	 *.........................................*/
-      
-      
-    //ready tweet with correct info extraction
-    val readyTweetsDF = sqlContextHIVE.createDataFrame(  
-                                                        rdd.map(   
+                                          /*....................................................
+                                           check if there is any message to process;
+                                           if true run elaborator methods of the parent class
+                                          *......................................................*/
+                                            
+                                           if(dataDF.count() > 0){
+                                             
+                                                prepareJsonData(dataDF)
+                                                /*<<< INFO >>>*/ logInfo(rdd.toString() +  " Processing completed!")
+                                            }
+                                      
                                         
-                                                                status =>   Row(
-                                                                                  status.getId,                         //tweet_id
-                                                                                  status.getLang,                       //lang
-                                                                                  
-                                                                                  status.getUser.getId,                 //user_id
-                                                                                  status.getUser.getName,               //user_name 
-                                                                                  
-                                                                                  getGeoLocationCoordinates(status)._1, //gl_latitude
-                                                                                  getGeoLocationCoordinates(status)._2, //gl_longitude
-                                                                                  
-                                                                                  getPlaceCoordinates(status.getPlace)._1, //bb_latitude
-                                                                                  getPlaceCoordinates(status.getPlace)._2, //bb_longitude
-                                                                                  
-                                                                                  status.getText,                       //text                
-                                                                                  status.getCreatedAt.getTime, //data
-                                                                  
-                                                                                  status.getHashtagEntities
-                                                                                        .map( x => x.getText)
-                                                                                        .mkString(" ")
-                                                                                        .toLowerCase()// hastag list separated by " "
-                                                                                  )
-                                                                                  
-                                                                 ), schema)//end of createDataFrame
-  
-      
-  
-  
-  
-        /*.........................................-..........
-         check if there is any message to process;
-         if true run the elaborator method of the parent class
-        *......................................................*/
-        
-       if(readyTweetsDF.count() > 0){
-         
-         
-            val elaboratedTweets = runElaborator(readyTweetsDF)
-            /*<<< INFO >>>*/ logInfo(rdd.toString() +  " Processing completed!")
-  
-        }
-    
-    
-    
-    
-        /*<<< INFO >>>*/ logInfo("\n\n ========================================== END ROUND ============================================>>>\n\n\n")
+                                      
+                                          /*<<< INFO >>>*/ logInfo("\n\n ========================================== END ROUND ============================================>>>\n\n\n")
     
 
-       
+
     }//end foreachRDD
  
     
   
     
+
     
     
     
@@ -315,3 +213,129 @@ class TweetStreamingApp(locationToObserve : String) extends TweetApp("streaming"
    
 }//end TweetStreamingApp class |||||||||||||
 
+
+
+
+
+
+///////////////////////////////////////////// EXTRAAAAA STUFFF ////////////////////////////////////////////////////////
+
+
+
+//optionally set word filters on input data
+//val filters = new Array[String](0)
+
+
+
+
+/*----------------------------------------------------
+* Twitter Auth Settings
+* >>>>>>> maybe in a .properties file?
+*----------------------------------------------------
+
+ //twitter auth magic configuration
+ val consumerKey = "UhAKuJjpHsnursRKZnU5Rnv1M"                               // "hARrkNBpwsh8lLldQt7fTe4iM"
+ val consumerSecret = "lklbynejp0GwDedxhU8J2bmj0rxZa0IwrUNH32HEBWQ2LQZnpg"   //"p0BRXCYEePUrJXPHQBxdIkP14idAYaSi934VJU2Hm2LBCUuqg0"
+ val accessToken = "92626442-N7ozJgcKRnxkVPiSUVybjDHf5oWFA83l99M9j9v26"      // "72019464-oUaReZ3i91fcVKg3Y7mBOzxlNrNXMpa5sxOcIld3R"
+ val accessTokenSecret = "u1sQeB8QpaSiKrp2VuwPnupSFdAbHOGiXDUBBzmywmlGc"    // "338I4ldbMc3CDpGYrpx5BuDfYbcAAZbJRDW86i9EY6Nwf"
+ 
+ //setting system properties so that Twitter4j library can use general OAuth credentials
+ System.setProperty("twitter4j.oauth.consumerKey", consumerKey)
+ System.setProperty("twitter4j.oauth.consumerSecret", consumerSecret)
+ System.setProperty("twitter4j.oauth.accessToken", accessToken)
+ System.setProperty("twitter4j.oauth.accessTokenSecret", accessTokenSecret)
+ System.setProperty("twitter4j.http.proxyHost", "10.1.8.13")
+ System.setProperty("twitter4j.http.proxyPort", "8080")*/
+
+
+
+
+
+//val streamTweets = TwitterUtils.createStream(ssc, None)//, filters, StorageLevel.MEMORY_ONLY_SER)
+
+//filtering by language and coordinates
+/*val englishTweets = streamTweets
+													/*.filter {t =>
+																		 val tags = t.getText.split(" ").filter(_.startsWith("#")).map(_.toLowerCase)
+																		 tags.contains("#bigdata")
+																	 }
+													*/
+													.filter { status => status.getLang match{   case "it"     => true
+																																			case ""       => true
+																																			case default  => false  }
+													}
+													//.filter { status =>  myLocation.checkLocation(status) }
+													 //.filter {status => status.getUser == "Paolo Gazzotti"}
+	
+		 */
+
+
+
+
+
+
+/*...........................................
+	* DataFrame definition
+	*.........................................*/
+/*
+val schema = StructType(
+													Array( StructField("tweet_id",      LongType,   true),
+																 StructField("lang",          StringType, true),
+																 
+																 StructField("user_id",       LongType,   true),
+																 StructField("user_name",     StringType, true),
+																 
+																 StructField("geo_latitude",   DoubleType, true),
+																 StructField("geo_longitude",  DoubleType, true),
+																 
+																 StructField("place_latitude",   DoubleType, true),
+																 StructField("place_longitude",  DoubleType, true),
+																 
+																 StructField("text",          StringType, true),
+																 StructField("time",          LongType,   true),
+
+
+														StructField("hashtagList", StringType, true)
+																 
+																)//end of Array definition
+												 
+																
+												)//end of StructType
+
+
+
+
+/*...........................................
+* DataFrame definition
+*.........................................*/
+	
+	
+//ready tweet with correct info extraction
+val readyTweetsDF = sqlContextHIVE.createDataFrame(
+																										rdd.map(
+																		
+																														status =>   Row(
+																																							status.getId,                         //tweet_id
+																																							status.getLang,                       //lang
+																																							
+																																							status.getUser.getId,                 //user_id
+																																							status.getUser.getName,               //user_name
+																																							
+																																							getGeoLocationCoordinates(status)._1, //gl_latitude
+																																							getGeoLocationCoordinates(status)._2, //gl_longitude
+																																							
+																																							getPlaceCoordinates(status.getPlace)._1, //bb_latitude
+																																							getPlaceCoordinates(status.getPlace)._2, //bb_longitude
+																																							
+																																							status.getText,                       //text
+																																							status.getCreatedAt.getTime, //data
+																															
+																																							status.getHashtagEntities
+																																										.map( x => x.getText)
+																																										.mkString(" ")
+																																										.toLowerCase()// hastag list separated by " "
+																																							)
+																																							
+																														 ), schema)//end of createDataFrame
+
+	@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@*/

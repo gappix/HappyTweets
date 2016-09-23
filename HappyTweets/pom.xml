@@ -69,6 +69,17 @@
 	    <version>1.1.0-beta1</version>
 	</dependency>
 
+
+    <!-- https://mvnrepository.com/artifact/net.minidev/json-smart -->
+    <dependency>
+      <groupId>net.minidev</groupId>
+      <artifactId>json-smart</artifactId>
+      <version>2.2.1</version>
+    </dependency>
+
+
+
+
     <!-- Test -->
     <dependency>
       <groupId>junit</groupId>
@@ -96,6 +107,12 @@
     </dependency>
 
   </dependencies>
+
+
+    <!-- ||||||||||||||||||||||||||||||||||||||||||   REPOSITORIES   ||||||||||||||||||||||||||||||||||||||||||||||||-->
+    <repositories>
+
+    </repositories>
 
   <build>
     <sourceDirectory>src/main/scala</sourceDirectory>

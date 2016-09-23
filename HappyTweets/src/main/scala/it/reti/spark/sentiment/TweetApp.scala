@@ -31,27 +31,63 @@ abstract class TweetApp(processingType : String) extends Serializable with Loggi
   //get sqlHIVE context and import methods for DataFrame/RDD conversion
   val sqlContextHIVE = ContextHandler.getSqlContextHIVE
   import sqlContextHIVE.implicits._
-  
-  
+	
+	
+	
 
-
-  
-  
-  
-  
-  /*.................................................................................................................*/
+	
+	
+	
+	
+	
+	/*.................................................................................................................*/
   /** 
   * Method TRAIT.
-  * MUST BE OVERRIDED in class extension.
+  * MUST BE OVERRIDED in class extension according to selected input source.
   */
-  def prepareData()
+  def acquireData()
   
   
   
+	
+	
   
   
   
-  
+  /*..................................................................................................................*/
+	/**
+		*
+		* @param rawTweets
+		*/
+	def prepareJsonData(rawTweets: DataFrame) = {
+		
+		
+
+		
+		
+		
+
+		
+		//select  needed fields using an helper
+		
+		val cleanedTweets = TweetInfoHandler.selectTweetsData(rawTweets)
+		cleanedTweets.show(600,false)
+		cleanedTweets.printSchema()
+		
+		
+		/*<<< INFO >>>*/ logInfo("Received " + cleanedTweets.count().toString + " tweets!")
+		
+		
+		
+		//launch the core elaborator@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+		//runElaborator(cleanedTweets)
+		
+		
+	}// end prepareJsonData method //
+	
+	
+	
+	
   
   
   
@@ -339,7 +375,7 @@ abstract class TweetApp(processingType : String) extends Serializable with Loggi
     
     
     
-    val tweetsHashtagsDF = inputDF.select($"tweet_id", $"text", $"hashtagList").explode("hashtagList", "hashtag") {
+    val tweetsHashtagsDF = inputDF.select($"tweet_id", $"text", $"hashtag_list").explode("hashtag_list", "hashtag") {
       
       //explode  hashtag_list (n-words)(1-row) field in
       //         hashtag     (1-word)(n-rows) one
@@ -353,7 +389,7 @@ abstract class TweetApp(processingType : String) extends Serializable with Loggi
     
     tweetsHashtagsDF.show()
     val filteredHashtagDF = tweetsHashtagsDF.filter(not(isnull(identifyNull(tweetsHashtagsDF("hashtag"))))).select($"tweet_id", $"hashtag")
-    filteredHashtagDF.show()
+    filteredHashtagDF.show(30, false)
     
     
     
