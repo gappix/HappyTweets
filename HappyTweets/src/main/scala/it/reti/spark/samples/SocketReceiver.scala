@@ -50,6 +50,8 @@ class SocketReceiver(port: Int)
     
      
      userInput = reader.readLine()
+     
+     
      while(!isStopped && userInput != null) {
        
        

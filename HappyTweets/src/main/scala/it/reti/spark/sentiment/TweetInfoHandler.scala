@@ -120,11 +120,11 @@ def selectTweetsData(rawTweets: DataFrame): DataFrame = {
 														"tweet_id", "lang", "user_id", "user_name", "text"
 														 */
 			$"id".as("tweet_id"),
-														//$"lang",
-														//$"user.id".as("user_id"),
-														//$"user.name".as("user_name"),
-														//$"text",
-		 $"coordinates.coordinates"
+			$"lang",
+			$"user.id".as("user_id"),
+			$"user.name".as("user_name"),
+			$"text",
+		  $"coordinates.coordinates"
 	 )
 	else
 			rawTweets.select(
