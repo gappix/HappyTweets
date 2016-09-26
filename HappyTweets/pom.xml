@@ -81,6 +81,14 @@
 	    <version>1.1.0-beta1</version>
 	</dependency>
 
+    <!-- http://mvnrepository.com/artifact/com.datastax.spark/spark-cassandra-connector_2.10 -->
+    <dependency>
+      <groupId>org.rogach</groupId>
+      <artifactId>scallop_${scala.tools.version}</artifactId>
+      <version>2.0.2</version>
+    </dependency>
+
+
     <!-- Test -->
     <dependency>
       <groupId>junit</groupId>
@@ -151,16 +159,7 @@
             <include>**/*Test.*</include>
             <include>**/*Suite.*</include>
           </includes>
-          <filters>
-            <filter>
-              <artifact>*:*</artifact>
-              <excludes>
-                <exclude>META-INF/*.SF</exclude>
-                <exclude>META-INF/*.DSA</exclude>
-                <exclude>META-INF/*.RSA</exclude>
-              </excludes>
-            </filter>
-          </filters>
+
         </configuration>
       </plugin>
 

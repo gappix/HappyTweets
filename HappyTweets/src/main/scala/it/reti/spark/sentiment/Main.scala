@@ -16,10 +16,11 @@ import org.apache.spark.Logging
  *  
  *  @args "batch" or "streaming" string to select desired execution mode          
  */  
-object Main extends Logging{
+object Main extends App with Logging{
   
+  run()
 
-  def main(args: Array[String])  {
+  private def run() = {
     
     
     /*INPUT parameter check:
@@ -36,11 +37,14 @@ object Main extends Logging{
         case "streaming" => {
           //println("\nSelect country to spy: \n \t\t 1: Australia \n \t\t 2: London \n \t\t 3: USA \n \t\t 5: United Kingdom \n ")
           val location = "3"
-          new TweetStreamingApp(location)
+          /*
+          Pass all args except the first one (processing type" dropping it from array
+           */
+          new TweetStreamingApp(args.drop(1))
         }
         //Otherwise
         case default => {
-          println("Wrong input parameter: write 'batch' or 'streaming'")
+          //println("Wrong input parameter: write 'batch' or 'streaming'")
           null
         }
     }
