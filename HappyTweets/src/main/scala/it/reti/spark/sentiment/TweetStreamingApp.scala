@@ -21,13 +21,18 @@ import org.apache.spark.storage.StorageLevel
 import org.apache.spark.Logging
 
 
-/*||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||*/
+/*||||||||||||||||||||||||||||||||||||||||||||||   HASHTAG TWEETS   ||||||||||||||||||||||||||||||||||||||||||||||||||*/
 case class HashtagTweets( tweet_id: Long, hashtagList: String, text: String)
 
 
 
 
-/*||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||*/
+
+
+
+
+
+/*||||||||||||||||||||||||||||||||||||||||||||  TWEET STREAMING APP   ||||||||||||||||||||||||||||||||||||||||||||||||*/
 /**
  * This class is an extension of TweetApp one.
  * It implements a specific Run method for streaming data retrieving from a twitter stream spout.
@@ -35,7 +40,7 @@ case class HashtagTweets( tweet_id: Long, hashtagList: String, text: String)
  * 
  * @param locationToObserve: String containing an integer number according to Location class options
  */
-class TweetStreamingApp(locationToObserve : String) extends TweetApp("streaming") with Logging {
+class TweetStreamingApp(locationToObserve : String) extends TweetJSONApp("streaming") with Logging {
   
   
 
@@ -82,10 +87,12 @@ class TweetStreamingApp(locationToObserve : String) extends TweetApp("streaming"
      *-----------------------------------------------*/
     
     
-    /*<<< INFO >>>*/ logInfo("Opening Twitter stream...")
+    /*<<< INFO >>>*/ logInfo("Opening Twitter stream...") /*<<< INFO >>>*/
+    
     val myReceiver = new SocketReceiver(portToListen)
     val tweetsStream = ssc.receiverStream(myReceiver)
-    /*<<< INFO >>>*/ logInfo("Stream opened!")
+    
+    /*<<< INFO >>>*/ logInfo("Stream opened!") /*<<< INFO >>>*/
   
   
   
@@ -98,24 +105,23 @@ class TweetStreamingApp(locationToObserve : String) extends TweetApp("streaming"
    	*---------------------------------------------------*/     
     tweetsStream.foreachRDD { rdd    =>
   
-                                          /*<<< INFO >>>*/ logInfo(rdd.toString() +  " started!")
-                                          val dataDF  = sqlContext.read.json(rdd)
-    
+      
+            /*<<< INFO >>>*/ logInfo(rdd.toString() +  " started!")
+            val dataDF  = sqlContext.read.json(rdd)
 
-                                          /*....................................................
-                                           check if there is any message to process;
-                                           if true run elaborator methods of the parent class
-                                          *......................................................*/
-                                            
-                                           if(dataDF.count() > 0){
-                                             
-                                                prepareJsonData(dataDF)
-                                                /*<<< INFO >>>*/ logInfo(rdd.toString() +  " Processing completed!")
-                                            }
-                                      
-                                        
-                                      
-                                          /*<<< INFO >>>*/ logInfo("\n\n ========================================== END ROUND ============================================>>>\n\n\n")
+
+            /*....................................................
+             check if there is any message to process;
+             if true run elaborator methods of the parent class
+            *......................................................*/
+              
+             if(dataDF.count() > 0)    prepareData(dataDF)
+                  
+ 
+  
+  
+      /*<<< INFO >>>*/ logInfo(rdd.toString() +  " Processing completed!") /*<<< INFO >>>*/
+      /*<<< INFO >>>*/ logInfo("\n\n ========================================== END ROUND ============================================>>>\n\n\n") /*<<< INFO >>>*/
     
 
 

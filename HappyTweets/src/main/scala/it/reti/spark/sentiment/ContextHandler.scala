@@ -28,7 +28,7 @@ object ContextHandler extends Logging {
   
   //SPARK contexts creation
   private val conf = new SparkConf()
-    .setAppName("Blue Eyes")
+    .setAppName("Happy Qlik")
     .setMaster("local[*]")
     //Kryo Options
     .set("spark.serializer","org.apache.spark.serializer.KryoSerializer")

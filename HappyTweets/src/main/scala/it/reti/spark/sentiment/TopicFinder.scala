@@ -1,5 +1,6 @@
 package it.reti.spark.sentiment
 
+import org.apache.spark.Logging
 import org.apache.spark.sql.DataFrame
 import org.apache.spark.sql.functions._
 
@@ -10,7 +11,7 @@ import org.apache.spark.sql.functions._
   *
   * Created by gappix on 19/09/2016.
   */
-object TopicFinder {
+object TopicFinder extends Logging{
   
   
   
@@ -111,41 +112,89 @@ object TopicFinder {
   /*..................................................................................................................*/
   /**
     *
-    * @param tweet a DataFrame with tweets infos
+    * @param tweet a DataFrame with "tweets_id", "text", "hashtag" infos
     * @return a new DataFrame with following fields:  tweet_id  | topic
     *
     * @note there could be multiple lines with the same tweet_id when it is associated to more than one topic
     */
-  def findTopic(tweet: DataFrame): DataFrame ={
-
+  def findTopic_hashtag_and_text(tweet: DataFrame): DataFrame = {
+  
+  
+    //selecting desired fields and invoking findTopic UDF helper methodr
+  
+    val groupedHashtagsDF = tweet.groupBy("tweet_id", "text")
+      .agg(concat_ws(", ", collect_list("hashtag"))
+        .as("hashtag_list"))
+  
+    
+    findTopic_general(groupedHashtagsDF)
+  
+  
+  }//end findTopic_hashtag_and_text method //
+  
+  
+  
+  
+  
+  /*..................................................................................................................*/
+  /**
+    *
+    * @param tweet a DataFrame with only "tweet_id" and "text" infos
+    * @return a new DataFrame with following fields:  tweet_id  | topic
+    *
+    * @note there could be multiple lines with the same tweet_id when it is associated to more than one topic
+    */
+  def findTopic_text_only(tweet: DataFrame): DataFrame = {
+    
     
     //selecting desired fields and invoking findTopic UDF helper methodr
-    val rawTopicsDF = tweet.select($"tweet_id", findTopics($"hashtagList", $"text").as("topicList"))
+    
+    val selectedFieldsDF = tweet.select( $"tweet_id",
+                                          $"text",
+                                          lit("").as("hashtag_list")
+                                        )//end select
+    findTopic_general(selectedFieldsDF)
+    
+  }//end findTopic_hashtag_and_text method //
   
-    rawTopicsDF.show() //--------------------------------
+  
+  
+  
+  
+  
+  
+  /*..................................................................................................................*/
+  /**
+    *
+    * @param inputTweet a DataFrame with "tweet_id", "text", "hashtag_list" infos
+    * @return a new DataFrame with following fields:  tweet_id  | topic
+    *
+    * @note there could be multiple lines with the same tweet_id when it is associated to more than one topic
+    */
+  private def findTopic_general(inputTweet: DataFrame): DataFrame = {
+    
+
+  
+    
+    val rawTopicsDF = inputTweet.select($"tweet_id", findTopics($"hashtag_list", $"text").as("topic_list"))
+
     /*
     explode  topicList (n-words)*(1-row) field in
              topic     (1-words)*(n-rows) one
      */
-    val tweetsTopicsDF = rawTopicsDF.explode("topicList", "topic") {
+    val tweetsTopicsDF = rawTopicsDF.explode("topic_list", "topic") {
                                                                       topicList: String => topicList.split(" ")
                                                                     }
-  
-
-  
-    tweetsTopicsDF.show() //----------------------------------------
+    
     val filteredTopicsDF = tweetsTopicsDF.filter(not(isnull(identifyNull(tweetsTopicsDF("topic")))))
                                           .select($"tweet_id", $"topic")
-  
-    
-    filteredTopicsDF.show() //-----------------------------------------------
-    
+
     
     filteredTopicsDF
     
 
     
-  }//end findTopic method //
+  }//end findTopic_general method //
   
   
   

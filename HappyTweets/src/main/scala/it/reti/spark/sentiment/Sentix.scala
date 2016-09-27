@@ -25,7 +25,7 @@ case class Sent(
     
     
     
-/*°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°*/
+/*|||||||||||||||||||||||||||||||||||||||||||||||||   SENTIX   |||||||||||||||||||||||||||||||||||||||||||||||||||||||*/
 /**
  * This class loads the Sentix dictionary from a HDFS text file and structures it as DataFrame
  * It can be accessed by other classes by a getHedonometer invocation   
@@ -44,7 +44,10 @@ object Sentix extends Serializable with Logging{
     
     
     //load textfile RDD
-    private val inputSENTIX = sc.textFile("/user/maria_dev/Tutorials/SPARKTwitterAnalyzer/Sentix.txt")  //"/home/administrator/BigData/Sentix.txt"
+    private val inputSENTIX = sc.textFile("/home/administrator/BigData/HappyQlik/Sentix.txt")
+	
+	// HIVE ---> /user/maria_dev/Tutorials/SPARKTwitterAnalyzer/Sentix.txt
+	// CASSY --> /home/administrator/BigData/HappyQLik/Sentix.txt
     
     
     
@@ -58,11 +61,31 @@ object Sentix extends Serializable with Logging{
     
                                
                                
-                               
+     /***/
      private val evaluate_AbsoluteSentiment = udf ((p: Float, n: Float) =>{   sqrt(0.25*(p*p) + 0.25*(n*n) + 0.25 - 0.5*n + 0.5*p -0.5*n*p)   })
                                                                                                                    
-                               
-   private val sentix_absoluteDF = sentixDF.select($"sentix_word", evaluate_AbsoluteSentiment(sentixDF("positive_score"), sentixDF("negative_score")).as("absolute_sentiment"), $"positive_score", $"negative_score")                            
+       
+  /*
+  
+   */
+   private val sentix_absoluteDF = sentixDF
+     .select(
+               $"sentix_word",
+               evaluate_AbsoluteSentiment(sentixDF("positive_score"), sentixDF("negative_score")).as("absolute_sentiment"),
+               $"positive_score",
+               $"negative_score"
+              )//end select
+     .groupBy($"sentix_word")
+     .agg(
+            "absolute_sentiment"  -> "avg",
+            "positive_score"      -> "avg",
+            "negative_score"      -> "avg")
+     .withColumnRenamed("avg(absolute_sentiment)","absolute_sentiment")
+     .withColumnRenamed("avg(positive_score)",    "positive_score"    )
+     .withColumnRenamed("avg(negative_score)",    "negative_score"    )
+
+  
+  
      
    
    sentix_absoluteDF.show()
@@ -71,8 +94,11 @@ object Sentix extends Serializable with Logging{
     private val broadCastedSentix = sc.broadcast(sentix_absoluteDF)
      
     
+	
+	
+	
 
-    //.............................................................................................................     
+    /*................................................................................................................*/
     /**     
      *  Method to 
      *  @return the entire Sentix dictionary DataFrame from local broadcasted variable
@@ -83,5 +109,5 @@ object Sentix extends Serializable with Logging{
 
     
     
-}// end  Hedonometer class //
+}// end  Sentix class |||||||||||
 

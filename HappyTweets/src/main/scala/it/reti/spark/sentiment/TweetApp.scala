@@ -56,10 +56,11 @@ abstract class TweetApp(processingType : String) extends Serializable with Loggi
   
   /*..................................................................................................................*/
 	/**
-		*
-		* @param rawTweets
+		* Method TRAIT.
+		* MUST BE OVERRIDED with correct input format
+		* @param rawTweets: DataFrame with input data from acquireData method
 		*/
-	def prepareJsonData(rawTweets: DataFrame) = {
+	def prepareData(rawTweets: DataFrame)
 		
 		
 
@@ -68,22 +69,7 @@ abstract class TweetApp(processingType : String) extends Serializable with Loggi
 		
 
 		
-		//select  needed fields using an helper
-		
-		val cleanedTweets = TweetInfoHandler.selectTweetsData(rawTweets)
-		cleanedTweets.show(600,false)
-		cleanedTweets.printSchema()
-		
-		
-		/*<<< INFO >>>*/ logInfo("Received " + cleanedTweets.count().toString + " tweets!")
-		
-		
-		
-		//launch the core elaborator@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-		//runElaborator(cleanedTweets)
-		
-		
-	}// end prepareJsonData method //
+
 	
 	
 	
@@ -92,13 +78,14 @@ abstract class TweetApp(processingType : String) extends Serializable with Loggi
   
   
   /*.................................................................................................................*/
-  /**
-   * Method which elaborates tweet DataFrames evaluating sentiment values, hashtags and topics.
-   *
-   * 
-   * @param rawTweetsDF	DataFrame with all tweet potentially useful fields
-   */
-  def runElaborator(rawTweetsDF : DataFrame)  = {
+	/**
+		* Method which elaborates tweet DataFrames evaluating sentiment values, hashtags and topics.
+		*
+		* @param tweetsDF	DataFrame with all tweet potentially useful fields
+		* @param hashtagsDF: DataFrame with all hashtags
+		* @note hashtagsDF can be null!
+		*/
+  def runElaborator(tweetsDF: DataFrame, hashtagsDF: DataFrame)  = {
     
     
     /*
@@ -122,82 +109,94 @@ abstract class TweetApp(processingType : String) extends Serializable with Loggi
      
      This DataFrame is ready to be stored in "tweets_processed" table
      */
-    val readyTweetsDF = rawTweetsDF.select(
-                                            $"tweet_id",
-                                            $"lang",
-                                            $"user_id",
-                                            $"user_name",
-                                          
-                                            when($"geo_latitude".isNull, $"place_latitude")
-                                              .otherwise($"geo_latitude")
-                                              .as("latitude"),
-                                          
-                                            when($"geo_longitude".isNull, $"place_longitude")
-                                              .otherwise($"geo_longitude")
-                                              as("longitude"),
-                                          
-                                            $"text",
-                                            $"time"
-                                            ).persist()
-  
-  
-    /*<< INFO >>*/logInfo("Received " + readyTweetsDF.count.toString() + " tweets")
-    readyTweetsDF.show()
-  
-  
+    val readyTweetsDF = tweetsDF.filter(not(isnull($"tweet_id")))
+	                              .select(
+													                $"tweet_id",
+													                $"lang",
+													                $"user_id",
+													                $"user_name",
+													              
+													                when($"geo_latitude".isNull, $"place_latitude")
+													                  .otherwise($"geo_latitude")
+													                  .as("latitude"),
+													              
+													                when($"geo_longitude".isNull, $"place_longitude")
+													                  .otherwise($"geo_longitude")
+													                  as("longitude"),
+													              
+													                $"text",
+													                $"time",
+													                $"region"
+													                )//end select
+	
+	
+	  
+	  
+	
+	  //>>>>>>>>>> MEMORY PERSIST >>>>>>>>> |##|##|##|
+	  readyTweetsDF.persist()
+    hashtagsDF.persist()
+	  //>>>>>>>>>> MEMORY PERSIST >>>>>>>>> |##|##|##|
+	  
+	  
+	  
+    /*<< INFO >>*/ logInfo("Received " + readyTweetsDF.count.toString() + " tweets") /*<< INFO >>*/
+	  /*<< INFO >>*/ logInfo("Found "    + hashtagsDF.count.toString()    + " hashtags") /*<< INFO >>*/
+    
 
-    
-    
   
-  
-    /*.............................................*
-     * SENTIMENT evaluation
-     *.............................................*/
-    
-    val sentimentDF = elaborateSentiment(readyTweetsDF)
-    
-    
-    
-    
-    
-    
-    
-    /*.............................................*
-     * HASHTAG detection
-     *.............................................*/
-    val hashtagDF = elaborateHashtags( rawTweetsDF)
-  
-    
-  
-  
-  
-  
-  
-    /*.............................................*
-     * TOPICS detection
-     *.............................................*/
-  
-    val topicsDF = elaborateTopics(rawTweetsDF)
-  
-  
-  
-    
-  
-  
-    /*.............................................*
-      STORE results to DB
-     *.............................................*/
-    
-    storeDataFrameToCASSANDRA(readyTweetsDF, sentimentDF, hashtagDF, topicsDF)
+  /*.............................................*
+   * SENTIMENT evaluation
+   *.............................................*/
+
+	  val sentimentDF = elaborateSentiment(readyTweetsDF)
 
 
 
+  
+  /*.............................................*
+   * TOPICS detection
+   *.............................................*/
+	  
+	  val topicsDF = elaborateTopics(hashtagsDF, readyTweetsDF)
+	
+	
+	  
+	  
+	  //>>>>>>>>>> MEMORY PERSIST >>>>>>>>> |##|##|##|
+	  topicsDF.persist()
+	  sentimentDF.persist()
+	  //>>>>>>>>>> MEMORY PERSIST >>>>>>>>> |##|##|##|
+	  
+	  
+	  
+	  
+  
+  /*.............................................*
+    STORE results to DB
+   *.............................................*/
+      
+	  storeDataFrameToCASSANDRA(readyTweetsDF, sentimentDF, hashtagsDF, topicsDF)
 
+
+	  
+	  
+
+		
+	  //<<<<<<<<<<<< MEMORY FREE <<<<<<<<<<<<<<<  |  |  |  |  |
+	  readyTweetsDF.unpersist()
+	  hashtagsDF.unpersist()
+	  topicsDF.unpersist()
+	  sentimentDF.unpersist()
+	  //<<<<<<<<<<<< MEMORY FREE <<<<<<<<<<<<<<<  |  |  |  |  |
+
+	  
     
     
   }  //end runElaborator method //
   
   
+	
   
   
   
@@ -209,16 +208,10 @@ abstract class TweetApp(processingType : String) extends Serializable with Loggi
 		* @return a DataFrame with sentiment infos composed by following fields:
     *         "tweet_id", "sentiment_value", "matched_words", "tweet_words", "confidency_value"
 		*/
-  def elaborateSentiment(inputTweetsDF: DataFrame) : DataFrame = {
-  
+  private def elaborateSentiment(inputTweetsDF: DataFrame) : DataFrame = {
+	  
     
-    
-    /*
-    
-    
-     */
-    
-    //getting the hedonometer dictionary (as DataFrame)
+    //get the hedonometer dictionary (as DataFrame)
     val sentixDF = Sentix.getSentix
     
     
@@ -228,49 +221,89 @@ abstract class TweetApp(processingType : String) extends Serializable with Loggi
      * UDF definitions
      *------------------------------------------------*/
   
-    /**
-      *
-      */
+	  
+	  
+    /** UDF function to evaluate the confidency value as (matched_words / total_tweet_words) */
     val confidencyValue = udf( (matched_words: Double, tweet_words: Double) =>{  matched_words/tweet_words  })
   
   
-    //sanitization by lower case and regular expression (only dictionary word extracted)
-    val sanitizeTweet = udf (( word: String) =>{
-      val regularExpression = "\\w+(\'\\w+)?".r
-      val sanitizedWord = regularExpression.findFirstIn(word.toLowerCase)
-      val emptyWord = ""
-      sanitizedWord match
-      {
-        case None            => emptyWord
-        case Some(something) => something     }
-    })
+	  
+	  
+	  
+	  /** UDF function to extract a clean word from a generic already-split string*/
+    val sanitize_english_tweets = udf (( word: String) =>{
+	    
+				      val regularExpression = "\\w+(\'\\w+)?".r
+	    
+	    
+	    
+				      val sanitizedWord = regularExpression.findFirstIn(word.toLowerCase)
+				      
+	    sanitizedWord match
+				      {
+				        case None            => null
+				        case Some(something) => something     }
+    
+    })// end UDF sanitize_english_tweets function //
+	
+	
+	  
+	  
+	
+	
+	  /** UDF function to extract a clean word from a generic already-split string*/
+	  val sanitize_italian_tweets = udf (( word: String) =>{
+		
+		  val regularExpression = "\\w+".r
+		  val sanitizedWord = regularExpression.findAllIn(word.toLowerCase).toList
+		  
+		  if (sanitizedWord.nonEmpty)
+			  sanitizedWord.last
+		  else null
+		  
+		
+	  })// end UDF sanitize_italian_tweets function //
+	  
+	  
+	  
+	  
+	  
+	  
+	  
   
-  
-    
-    
-    
+
     
     /*---------------------------------------------------*
      * Tweet words sanitization
      *---------------------------------------------------*/
-  
+	
+	  
+	  
     /*
     explode  text(n-words)(1-row) field in
              word(1-word)(n-rows) one
      */
-    val explodedTWEETS = inputTweetsDF.select($"tweet_id", $"text")
-                                      .explode("text", "word"){text: String => text.split(" ")}
-  
-  
+    val explodedTWEETS = inputTweetsDF.select($"tweet_id", $"lang", $"text")
+                                      .explode("text", "word"){
+	                                                              text: String => text.split(" ")
+                                                                                                    }
+	
+
   
   
   
     //sanitize words by udf
-    val sanitizedTWEETS = explodedTWEETS.select($"tweet_id", sanitizeTweet(explodedTWEETS("word")).as("word"))
+    val sanitizedTWEETS = explodedTWEETS.select(
+																							    $"tweet_id",
+																							    when($"lang".equalTo("en"), sanitize_english_tweets(explodedTWEETS("word")))
+																								    .otherwise(sanitize_italian_tweets(explodedTWEETS("word")))
+																								    .as("word")
+																						    )//end select
+																						    .filter(not(isnull($"word")))
+	
+	  
   
-  
-  
-  
+
   
   
   
@@ -280,20 +313,19 @@ abstract class TweetApp(processingType : String) extends Serializable with Loggi
   
     //count tweets words in a new DataFrame
     val wordCountByTweetDF = countTweetsWords(sanitizedTWEETS)
-    
-    
+	  
+
     
     
     //joining tweets with Hedonometer dictionary
     val sentimentTWEETS = sentixDF
                                   .join(sanitizedTWEETS, sentixDF("sentix_word") === sanitizedTWEETS("word"), "inner")
-                                  .groupBy("tweet_id")
+																	.groupBy("tweet_id")
                                   .agg( "absolute_sentiment"  -> "avg",
                                         "word"                -> "count" )
                                   .withColumnRenamed("avg(absolute_sentiment)","sentiment_value")
                                   .withColumnRenamed("count(word)","matched_words")
-    
-    
+	  
     
     //pack results into a new DataFrame
     val sentimentConfidencyTWEETS = sentimentTWEETS
@@ -304,8 +336,7 @@ abstract class TweetApp(processingType : String) extends Serializable with Loggi
                                                           $"tweet_words",
                                                           confidencyValue($"matched_words", $"tweet_words").as("confidency_value")
                                                         )
-
-    
+	  
     sentimentConfidencyTWEETS
     
   }//end elaborateSentiment method //
@@ -326,17 +357,13 @@ abstract class TweetApp(processingType : String) extends Serializable with Loggi
     * @param inputDF: DataFrame with following fields: "tweet_id", "word" (already sanitized)
     * @return a DataFrame with two fields: "tweet_id", "tweet_words"
     */
-  def countTweetsWords(inputDF: DataFrame): DataFrame = {
-    
-    
+  private def countTweetsWords(inputDF: DataFrame): DataFrame = {
+	  
 
     //count original tweet words
-    val wordCountByTweetDF = inputDF.groupBy("tweet_id").count()
-                                    .withColumnRenamed("count","tweet_words")
-    
-
-    
-    wordCountByTweetDF
+    inputDF.groupBy("tweet_id")
+	          .agg( "word"-> "count" )
+	          .withColumnRenamed("count(word)","tweet_words")
     
     
   }//end method //
@@ -346,63 +373,7 @@ abstract class TweetApp(processingType : String) extends Serializable with Loggi
   
   
   
-  
 
-
-  
-  
-  /*..................................................................................................................*/
-	/**
-		* This method provides a DataFrame with a full hashtag column, mantaining the correct association with
-		* their tweet_id.
-		*
-		* @param inputDF DataFrame with all tweets info (included hashtagList!)
-		* @return DataFrame which associates each tweet_id with its own hashtags
-		*
-		* @note there could be more than one row per tweet_id! there will be one row for each associated hashtag
-		*/
-  def elaborateHashtags(inputDF:  DataFrame): DataFrame = {
-	  
-	  
-	  
-	  /*---------------------------------------------------*
-     * UDF DEFINITION
-     *---------------------------------------------------*/
-    val identifyNull = udf (( hashtag: String) =>{  if (hashtag.length() > 0) hashtag.toLowerCase()
-    else null        }
-    )
-    
-    
-    
-    
-    val tweetsHashtagsDF = inputDF.select($"tweet_id", $"text", $"hashtag_list").explode("hashtag_list", "hashtag") {
-      
-      //explode  hashtag_list (n-words)(1-row) field in
-      //         hashtag     (1-word)(n-rows) one
-      hashtagList: String => hashtagList.split(" ")
-      
-    }
-    
-
-    
-    
-    
-    tweetsHashtagsDF.show()
-    val filteredHashtagDF = tweetsHashtagsDF.filter(not(isnull(identifyNull(tweetsHashtagsDF("hashtag"))))).select($"tweet_id", $"hashtag")
-    filteredHashtagDF.show(30, false)
-    
-    
-    
-    
-    
-    filteredHashtagDF
-    
-  }// end hashtagExplode  method //
-  
-  
-  
-  
-  
   
   
   
@@ -412,16 +383,32 @@ abstract class TweetApp(processingType : String) extends Serializable with Loggi
 	  * This method provides a DataFrame with a full topic column, mantaining the correct association with
 	  * their tweet_id.
 	  *
-    * @param inputDF a DataFrame with all tweets info (included hashtagList!)
+    * @param hashtagDF a DataFrame with "tweet_id", "text" and "hashtag" infos
+	  * @param tweetsDF a DataFrame with all tweets infos
     * @return DataFrame which associates each tweet_id with its own topics
 	  *
 	  * @note there could be more than one row per tweet_id! there will be one row for each associated topic
     */
-  def elaborateTopics(inputDF: DataFrame): DataFrame ={
+  private def elaborateTopics(hashtagDF: DataFrame, tweetsDF: DataFrame): DataFrame ={
     
-    val topicDF = TopicFinder.findTopic(inputDF)
-    
-    topicDF
+    /*
+    Check if hashtagDF is not null.
+    If so, find topic with full infos accessible.
+    Otherwise a new DataFrame with "tweet_id", "text" and "hashtag= null" is passed.
+      */
+	  
+	  if(hashtagDF.count() > 0) TopicFinder.findTopic_hashtag_and_text(hashtagDF)
+	  else
+
+		  TopicFinder.findTopic_text_only(
+			
+			  tweetsDF.select(
+				  $"tweet_id",
+				  $"text",
+				  lit(null: String).as("hashtag")
+			  )
+		  )
+	  
     
   }// end elaborateTopics method //
   
@@ -441,32 +428,107 @@ abstract class TweetApp(processingType : String) extends Serializable with Loggi
     * @param hashtagDF        DataFrame containing tweet id and related hashtags
     * @param topicsDF          DataFrame containing tweet id and  related topics
     */
-  def storeDataFrameToCASSANDRA ( tweetProcessedDF: DataFrame,  sentimentDF: DataFrame, hashtagDF: DataFrame, topicsDF: DataFrame) {
-  
-  
-    tweetProcessedDF.show()
-    //myDataStorer.storeTweetsToCASSANDRA(tweetProcessedDF)
-    /*<<INFO>>*/  logInfo("tweets storing completed!")
-  
-    sentimentDF.show()
-    //myDataStorer.storeSentimentToCASSANDRA(sentimentDF)
-    /*<<INFO>>*/  logInfo("sentiment storing completed!")
-  
-    hashtagDF.show()
-    //myDataStorer.storeHashtagToCASSANDRA(hashtagDF)
-    /*<<INFO>>*/  logInfo("hashtag storing completed!")
-  
-    topicsDF.show()
-    //myDataStorer.storeTopicsToCASSANDRA(topicsDF)
-    /*<<INFO>>*/  logInfo("topics storing completed!")
-
-    
-    
-    
+  private def storeDataFrameToCASSANDRA ( tweetProcessedDF: DataFrame,  sentimentDF: DataFrame, hashtagDF: DataFrame, topicsDF: DataFrame) {
+	
+	
+	
+	  /*<<INFO>>*/logInfo("Elaborating tweets...")/*<<INFO>>*/
+	  tweetProcessedDF.show()
+	  tweetProcessedDF.printSchema()
+	  /*<<INFO>>*/logInfo("Tweets elaborated! >>>>  Now saving to Cassandra... ")/*<<INFO>>*/
+	  //myDataStorer.storeTweetsToCASSANDRA(tweetProcessedDF)
+    /*<<INFO>>*/  logInfo("Tweets storing completed!") /*<<INFO>>*/
+	
+	  
+	
+	  /*<<INFO>>*/logInfo("Elaborating sentiment...")/*<<INFO>>*/
+	  sentimentDF.show()
+	  /*<<INFO>>*/logInfo("Sentiment elaborated! >>>>  Now saving to Cassandra...")/*<<INFO>>*/
+	  //myDataStorer.storeSentimentToCASSANDRA(sentimentDF)
+    /*<<INFO>>*/  logInfo("Sentiment storing completed!")/*<<INFO>>*/
+	
+	  
+	
+	  /*<<INFO>>*/logInfo("Elaborating hashtags...")/*<<INFO>>*/
+	  hashtagDF.show()
+	  /*<<INFO>>*/logInfo("Hashtag elaborated! >>>>  Now saving to Cassandra... ")/*<<INFO>>*/
+	  //myDataStorer.storeHashtagToCASSANDRA(hashtagDF.select($"tweet_id", $"hashtag"))
+    /*<<INFO>>*/  logInfo("Hashtag storing completed!") /*<<INFO>>*/
+	
+	
+	  
+	  /*<<INFO>>*/logInfo("Evaluating topics...")/*<<INFO>>*/
+	  topicsDF.show()
+	  /*<<INFO>>*/logInfo("Topics evaluated! >>>>  Now saving to Cassandra...")/*<<INFO>>*/
+	  //myDataStorer.storeTopicsToCASSANDRA(topicsDF)
+    /*<<INFO>>*/  logInfo("Topics storing completed!") /*<<INFO>>*/
+	
+	
+	
+	
   }//end storeDataFrameToCASSANDRA method //
-  
-  
-  
-  
-  
+	
+	
+	
+	
+	
+	//------------------------------------------------ UNUSED METHOD!!!
+	/*
+		
+		
+		/*..................................................................................................................*/
+		/**
+			* This method provides a DataFrame with a full hashtag column, mantaining the correct association with
+			* their tweet_id.
+			*
+			* @param inputDF DataFrame with all tweets info (included hashtagList!)
+			* @return DataFrame which associates each tweet_id with its own hashtags
+			*
+			* @note there could be more than one row per tweet_id! there will be one row for each associated hashtag
+			*/
+		def elaborateHashtags(inputDF:  DataFrame): DataFrame = {
+			
+			
+			
+			/*---------------------------------------------------*
+			 * UDF DEFINITION
+			 *---------------------------------------------------*/
+			val identifyNull = udf (( hashtag: String) =>{  if (hashtag.length() > 0) hashtag.toLowerCase()
+			else null        }
+			)
+			
+			
+			
+			
+			val tweetsHashtagsDF = inputDF.select($"tweet_id", $"text", $"hashtag_list").explode("hashtag_list", "hashtag") {
+				
+				//explode  hashtag_list (n-words)(1-row) field in
+				//         hashtag     (1-word)(n-rows) one
+				hashtagList: String => hashtagList.split(" ")
+				
+			}
+			
+	
+			
+			
+			
+			tweetsHashtagsDF.show()
+			val filteredHashtagDF = tweetsHashtagsDF.filter(not(isnull(identifyNull(tweetsHashtagsDF("hashtag"))))).select($"tweet_id", $"hashtag")
+			filteredHashtagDF.show(30, false)
+			
+			
+			
+			
+			
+			filteredHashtagDF
+			
+		}// end hashtagExplode  method //
+		
+		
+		
+		*/
+	
+	
+	
+	
 }//end  TweetApp Class |||||||||||||||||||||||||

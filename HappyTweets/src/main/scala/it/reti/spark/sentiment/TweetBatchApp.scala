@@ -19,7 +19,7 @@ import org.apache.spark.sql.hive.HiveContext
  * @param fileNameAndPath: path to retrieve input json-dataFile
  */
   
-class TweetBatchApp(fileNameAndPath : String) extends TweetApp("batch") {  
+class TweetBatchApp(fileNameAndPath : String) extends TweetJSONApp("batch") {
   
   
   
@@ -59,7 +59,7 @@ class TweetBatchApp(fileNameAndPath : String) extends TweetApp("batch") {
     
     
    //DataFrame is created by selecting interested fields from input DataFrame
-    prepareJsonData(englishTWEETS)
+    prepareData(englishTWEETS)
     
     
 

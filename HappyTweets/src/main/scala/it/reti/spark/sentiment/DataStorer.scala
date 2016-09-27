@@ -29,10 +29,10 @@ class DataStorer(processingType: String) extends Serializable with Logging{
    */
   
   //CASSANDRA tables
-  val tableTweets     = "test_processed_" + processingType
-  val tableSentiment  = "test_sentiment_" + processingType
-  val tableHashtag    = "test_hashtag_"   + processingType
-  val tableTopics     = "test_topics_"    + processingType
+  val tableTweets     = "test2_processed_" + processingType
+  val tableSentiment  = "test2_sentiment_" + processingType
+  val tableHashtag    = "test2_hashtag_"   + processingType
+  val tableTopics     = "test2_topic_"    + processingType
  
   //CASSANDRA keyspace
   val keyspaceCassandra = "qlik"
@@ -48,10 +48,9 @@ class DataStorer(processingType: String) extends Serializable with Logging{
   def storeTweetsToCASSANDRA (tweetDF: DataFrame) = {
         
         /*<<INFO>>*/  logInfo("Writing tweets into CASSANDRA table...")
-        tweetDF.persist().write.format("org.apache.spark.sql.cassandra").option("table",tableTweets).option("keyspace",keyspaceCassandra).mode(SaveMode.Append).save()
+        tweetDF.write.format("org.apache.spark.sql.cassandra").option("table",tableTweets).option("keyspace",keyspaceCassandra).mode(SaveMode.Append).save()
         /*<<INFO>>*/  logInfo("The following content has successfully been stored:")       
-        tweetDF.show()
-        tweetDF.unpersist()
+        
         
 
     
@@ -68,10 +67,9 @@ class DataStorer(processingType: String) extends Serializable with Logging{
   def storeSentimentToCASSANDRA (sentimentDF: DataFrame) = {
         
         /*<<INFO>>*/ logInfo("Writing sentiment results into CASSANDRA table...") 
-        sentimentDF.persist().write.format("org.apache.spark.sql.cassandra").option("table",tableSentiment).option("keyspace",keyspaceCassandra).mode(SaveMode.Append).save()
+        sentimentDF.write.format("org.apache.spark.sql.cassandra").option("table",tableSentiment).option("keyspace",keyspaceCassandra).mode(SaveMode.Append).save()
         /*<<INFO>>*/  logInfo("The following content has successfully been stored:")  
-        sentimentDF.show()
-        sentimentDF.unpersist()
+   
 
 
   }//end storeSentimentToCASSANDRA method //
@@ -88,10 +86,9 @@ class DataStorer(processingType: String) extends Serializable with Logging{
   def storeHashtagToCASSANDRA (hashtagDF: DataFrame) = {
         
         /*<<INFO>>*/ logInfo("Writing sentiment results into CASSANDRA table...") 
-        hashtagDF.persist().write.format("org.apache.spark.sql.cassandra").option("table",tableHashtag).option("keyspace",keyspaceCassandra).mode(SaveMode.Append).save()
+        hashtagDF.write.format("org.apache.spark.sql.cassandra").option("table",tableHashtag).option("keyspace",keyspaceCassandra).mode(SaveMode.Append).save()
         /*<<INFO>>*/  logInfo("The following content has successfully been stored:")  
-        hashtagDF.show()
-        hashtagDF.unpersist()
+        
 
 
   }//end storeHashtagToCASSANDRA method //
@@ -108,10 +105,9 @@ class DataStorer(processingType: String) extends Serializable with Logging{
   def storeTopicsToCASSANDRA (topicsDF: DataFrame) = {
     
         /*<<INFO>>*/ logInfo("Writing sentiment results into CASSANDRA table...")
-        topicsDF.persist().write.format("org.apache.spark.sql.cassandra").option("table",tableTopics).option("keyspace",keyspaceCassandra).mode(SaveMode.Append).save()
+        topicsDF.write.format("org.apache.spark.sql.cassandra").option("table",tableTopics).option("keyspace",keyspaceCassandra).mode(SaveMode.Append).save()
         /*<<INFO>>*/  logInfo("The following content has successfully been stored:")
-        topicsDF.show()
-        topicsDF.unpersist()
+       
     
     
   }//end storeTopicsToCASSANDRA method //
