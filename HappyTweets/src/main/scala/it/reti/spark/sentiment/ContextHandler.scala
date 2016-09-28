@@ -30,6 +30,7 @@ object ContextHandler extends Logging {
   private val conf = new SparkConf()
     .setAppName("Happy Qlik")
     .setMaster("local[*]")
+    .set("spark.cassandra.connection.host", "10.1.2.172")
     //Kryo Options
     .set("spark.serializer","org.apache.spark.serializer.KryoSerializer")
     .registerKryoClasses( Array(

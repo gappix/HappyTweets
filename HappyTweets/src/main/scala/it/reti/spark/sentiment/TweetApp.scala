@@ -436,7 +436,7 @@ abstract class TweetApp(processingType : String) extends Serializable with Loggi
 	  tweetProcessedDF.show()
 	  tweetProcessedDF.printSchema()
 	  /*<<INFO>>*/logInfo("Tweets elaborated! >>>>  Now saving to Cassandra... ")/*<<INFO>>*/
-	  //myDataStorer.storeTweetsToCASSANDRA(tweetProcessedDF)
+	  myDataStorer.storeTweetsToCASSANDRA(tweetProcessedDF)
     /*<<INFO>>*/  logInfo("Tweets storing completed!") /*<<INFO>>*/
 	
 	  
@@ -444,7 +444,7 @@ abstract class TweetApp(processingType : String) extends Serializable with Loggi
 	  /*<<INFO>>*/logInfo("Elaborating sentiment...")/*<<INFO>>*/
 	  sentimentDF.show()
 	  /*<<INFO>>*/logInfo("Sentiment elaborated! >>>>  Now saving to Cassandra...")/*<<INFO>>*/
-	  //myDataStorer.storeSentimentToCASSANDRA(sentimentDF)
+	  myDataStorer.storeSentimentToCASSANDRA(sentimentDF)
     /*<<INFO>>*/  logInfo("Sentiment storing completed!")/*<<INFO>>*/
 	
 	  
@@ -452,7 +452,7 @@ abstract class TweetApp(processingType : String) extends Serializable with Loggi
 	  /*<<INFO>>*/logInfo("Elaborating hashtags...")/*<<INFO>>*/
 	  hashtagDF.show()
 	  /*<<INFO>>*/logInfo("Hashtag elaborated! >>>>  Now saving to Cassandra... ")/*<<INFO>>*/
-	  //myDataStorer.storeHashtagToCASSANDRA(hashtagDF.select($"tweet_id", $"hashtag"))
+	  myDataStorer.storeHashtagToCASSANDRA(hashtagDF.select($"tweet_id", $"hashtag"))
     /*<<INFO>>*/  logInfo("Hashtag storing completed!") /*<<INFO>>*/
 	
 	
@@ -460,7 +460,7 @@ abstract class TweetApp(processingType : String) extends Serializable with Loggi
 	  /*<<INFO>>*/logInfo("Evaluating topics...")/*<<INFO>>*/
 	  topicsDF.show()
 	  /*<<INFO>>*/logInfo("Topics evaluated! >>>>  Now saving to Cassandra...")/*<<INFO>>*/
-	  //myDataStorer.storeTopicsToCASSANDRA(topicsDF)
+	  myDataStorer.storeTopicsToCASSANDRA(topicsDF)
     /*<<INFO>>*/  logInfo("Topics storing completed!") /*<<INFO>>*/
 	
 	

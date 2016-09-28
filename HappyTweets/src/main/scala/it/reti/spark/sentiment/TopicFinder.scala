@@ -24,27 +24,27 @@ object TopicFinder extends Logging{
   Here is needed a topic definition by setting, for each topic:
           
           1)topic name
-          2)a List of hashtag referred to this topic
-          3)a List of words referred to this topic
+          2)a List of keywords referred to this topic
+
           
    */
   private val topics = new Array[Topic](4)
   
-              topics(0) = Topic( "politica",
-                                  Seq("renzi", "raggi", "politica"),
-                                  Seq("renzi", "referendum", "costituzionale", "politica")   )
+              topics(0) = Topic( "business intelligence",
+                                  Seq("businessintelligence", "business intelligence", "qlik", "qlikview", "qlik view", "qliksense", "qlik sense", "data analytics", "dataanalytics", "datascience" ) 
+                                  )
   
-              topics(1) = Topic( "gopro",
-                                  Seq("gopro", "karma", "hero5"),
-                                  Seq("gopro", "karma", "hero5")   )
+              topics(1) = Topic( "big data",
+                                  Seq("bigdata", "big data", "apachespark", "apache spark", "hadoop", "iot", "datalake", "data lake", "machinelearning")  
+                                  )
   
-              topics(2) = Topic( "topic3",
-                                  Seq("hashtag1", "hashtag2"),
-                                  Seq("word1", "word2", "word3")   )
+              topics(2) = Topic( "viz your world",
+                                  Seq("vizyourworld", "visualize your world")  
+                                  )
   
-              topics(3) =  Topic( "topic1",
-                                  Seq("hashtag1", "hashtag2"),
-                                  Seq("word1", "word2", "word3")   )
+              topics(3) =  Topic( "sentiment analysis",
+                                  Seq("sentimentanalysis", "sentiment analysis", "tweetsentiment", "tweet sentiment", "tweets sentiment", "socialmediaanalytics", "social media analytics")
+                                  )
   
   
   
@@ -226,15 +226,9 @@ object TopicFinder extends Logging{
     
     
     //hashtag search
-    for (key_hashtag <- topicSearched.relatedHashtags)
-      if(hashtags.contains(key_hashtag) ) return true
-    
-    
-    //keyword search
-    for (key_word  <- topicSearched.relatedWords)
-      if(text.toLowerCase.contains(key_word))   return true
-    
-    
+    for (key_word <- topicSearched.key_words)
+      if(hashtags.contains(key_word) || text.toLowerCase.contains(key_word) ) return true
+
     false
 
   }// end topicIsFound method //

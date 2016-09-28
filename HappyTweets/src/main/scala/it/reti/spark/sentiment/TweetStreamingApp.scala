@@ -59,7 +59,7 @@ class TweetStreamingApp(locationToObserve : String) extends TweetJSONApp("stream
   
   
     //interval settings
-    val intervalSeconds = 25 /* <---- set this to best interval for your operation */
+    val intervalSeconds = 60 /* <---- set this to best interval for your operation */
   
     //port for socket listener
     val portToListen = 9999
