@@ -30,20 +30,20 @@ object TopicFinder extends Logging{
    */
   private val topics = new Array[Topic](4)
   
-              topics(0) = Topic( "business intelligence",
-                                  Seq("businessintelligence", "business intelligence", "qlik", "qlikview", "qlik view", "qliksense", "qlik sense", "data analytics", "dataanalytics", "datascience" ) 
+              topics(0) = Topic( "business_intelligence",
+                                  Seq("businessintelligence", "business intelligence", "qlik", "qlikview", "qlik view", "qliksense", "qlik sense", "analytics", "data analytics", "dataanalytics", "datascience" )
                                   )
   
-              topics(1) = Topic( "big data",
-                                  Seq("bigdata", "big data", "apachespark", "apache spark", "hadoop", "iot", "datalake", "data lake", "machinelearning")  
+              topics(1) = Topic( "big_data",
+                                  Seq("bigdata", "big data", "apachespark", "apache spark", "deeplearning", "hadoop", " iot ", "datalake", "data lake", "machinelearning", "machine learning ", "internet of things")
                                   )
   
-              topics(2) = Topic( "viz your world",
-                                  Seq("vizyourworld", "visualize your world")  
+              topics(2) = Topic( "viz_your_world",
+                                  Seq("vizyourworld", "visualize your world", "qlik")
                                   )
   
-              topics(3) =  Topic( "sentiment analysis",
-                                  Seq("sentimentanalysis", "sentiment analysis", "tweetsentiment", "tweet sentiment", "tweets sentiment", "socialmediaanalytics", "social media analytics")
+              topics(3) =  Topic( "innovazione",
+                                  Seq("startup", "start up ", "innovazione", "nuove tecnologie", "deeplearning", "artificialintelligence","innovation", "tech ", "bigdata", "digitaltransformation", "impresa")
                                   )
   
   
@@ -223,12 +223,14 @@ object TopicFinder extends Logging{
     
     
      */
-    
-    
+       
     //hashtag search
-    for (key_word <- topicSearched.key_words)
-      if(hashtags.contains(key_word) || text.toLowerCase.contains(key_word) ) return true
-
+    for (key_word <- topicSearched.key_words){
+      
+      if(hashtags.contains(key_word)) return true
+      if (text.toLowerCase.contains(key_word)) return true
+      
+    }
     false
 
   }// end topicIsFound method //

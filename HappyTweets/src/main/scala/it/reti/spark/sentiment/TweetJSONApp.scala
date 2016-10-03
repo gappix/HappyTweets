@@ -13,7 +13,7 @@ import org.apache.spark.sql.DataFrame
 	*
 	* Created by gazzopa1 on 26/09/2016.
 	*/
-abstract class TweetJSONApp(processingType: String) extends TweetApp(processingType) with Logging {
+abstract class TweetJSONApp(processingType: String) extends TweetApp(processingType) {
 	
 	
 	
@@ -32,8 +32,6 @@ abstract class TweetJSONApp(processingType: String) extends TweetApp(processingT
 				val hashtagTweets= TweetInfoHandler.selectHashtagData(rawTweets)
 
 
-				
-				/*<<< INFO >>>*/ logInfo("Received " + cleanedTweets.count().toString + " tweets!")/*<<< INFO >>>*/
 				
 				
 				

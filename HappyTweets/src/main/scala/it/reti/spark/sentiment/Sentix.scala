@@ -62,13 +62,15 @@ object Sentix extends Serializable with Logging{
                                
                                
      /***/
-     private val evaluate_AbsoluteSentiment = udf ((p: Float, n: Float) =>{   sqrt(0.25*(p*p) + 0.25*(n*n) + 0.25 - 0.5*n + 0.5*p -0.5*n*p)   })
+     private val evaluate_AbsoluteSentiment = udf ((p: Float, n: Float) =>{   Math.sqrt(0.25*(p*p) + 0.25*(n*n) + 0.25 - 0.5*n + 0.5*p -0.5*n*p)   })
                                                                                                                    
        
   /*
   
+  
    */
    private val sentix_absoluteDF = sentixDF
+	   .where(not($"sentix_word".contains("_")))
      .select(
                $"sentix_word",
                evaluate_AbsoluteSentiment(sentixDF("positive_score"), sentixDF("negative_score")).as("absolute_sentiment"),

@@ -34,21 +34,22 @@ object ContextHandler extends Logging {
     //Kryo Options
     .set("spark.serializer","org.apache.spark.serializer.KryoSerializer")
     .registerKryoClasses( Array(
-    classOf[scala.collection.mutable.WrappedArray[_]],
-    classOf[Array[org.apache.spark.streaming.receiver.Receiver[_]]],
-    classOf[org.apache.spark.sql.types.StructType],
-    classOf[Array[org.apache.spark.sql.types.StructField]],
-    classOf[org.apache.spark.sql.types.StructField],
-    classOf[org.apache.spark.sql.types.StringType],
-    classOf[Array[org.apache.spark.sql.catalyst.InternalRow]],
-    //classOf[org.apache.spark.sql.types.StringType$],
-    classOf[org.apache.spark.sql.types.Metadata],
-    classOf[scala.collection.immutable.Map[_,_]],
-    classOf[org.apache.spark.sql.catalyst.expressions.UnsafeRow],
-    classOf[org.apache.spark.sql.catalyst.expressions.GenericInternalRow],
-    classOf[Array[Object]],
-    classOf[org.apache.spark.unsafe.types.UTF8String]
-    //classOf[org.apache.spark.streaming.twitter.TwitterReceiver]
+      classOf[scala.collection.mutable.WrappedArray[_]],
+      classOf[Array[org.apache.spark.streaming.receiver.Receiver[_]]],
+      classOf[org.apache.spark.sql.types.StructType],
+      classOf[Array[org.apache.spark.sql.types.StructField]],
+      classOf[org.apache.spark.sql.types.StructField],
+      classOf[org.apache.spark.sql.types.StringType],
+      classOf[Array[org.apache.spark.sql.catalyst.InternalRow]],
+      //classOf[org.apache.spark.sql.types.StringType$],
+      classOf[org.apache.spark.sql.types.Metadata],
+      classOf[scala.collection.immutable.Map[_,_]],
+      classOf[org.apache.spark.sql.catalyst.expressions.UnsafeRow],
+      classOf[org.apache.spark.sql.catalyst.expressions.GenericInternalRow],
+      classOf[Array[Object]],
+      classOf[org.apache.spark.unsafe.types.UTF8String],
+      classOf[scala.collection.mutable.WrappedArray.ofRef[_]],
+      classOf[it.reti.spark.sentiment.SocketReceiver]    //classOf[org.apache.spark.streaming.twitter.TwitterReceiver]
     ))
     //.set("spark.kryo.registrationRequired","true")
     //Spark logger options

@@ -110,11 +110,22 @@ abstract class TweetApp(processingType : String) extends Serializable with Loggi
      This DataFrame is ready to be stored in "tweets_processed" table
      */
     val readyTweetsDF = tweetsDF.filter(not(isnull($"tweet_id")))
+	    
+	                              //Family Filter
+	                              .filter(not(  $"text".contains("porno")     ||
+	                                            $"text".contains("videochat") ||
+	                                            $"text".contains("sesso")     ||
+	                                            $"text".contains("puttana")   ||
+	                                            $"text".contains("troia")         ))
+	    
 	                              .select(
 													                $"tweet_id",
 													                $"lang",
 													                $"user_id",
 													                $"user_name",
+		                                      $"screen_name",
+		                                      $"retweets_something",
+		                              
 													              
 													                when($"geo_latitude".isNull, $"place_latitude")
 													                  .otherwise($"geo_latitude")
@@ -140,8 +151,7 @@ abstract class TweetApp(processingType : String) extends Serializable with Loggi
 	  
 	  
 	  
-    /*<< INFO >>*/ logInfo("Received " + readyTweetsDF.count.toString() + " tweets") /*<< INFO >>*/
-	  /*<< INFO >>*/ logInfo("Found "    + hashtagsDF.count.toString()    + " hashtags") /*<< INFO >>*/
+  
     
 
   
@@ -434,7 +444,7 @@ abstract class TweetApp(processingType : String) extends Serializable with Loggi
 	
 	  /*<<INFO>>*/logInfo("Elaborating tweets...")/*<<INFO>>*/
 	  tweetProcessedDF.show()
-	  tweetProcessedDF.printSchema()
+	  /*<< INFO >>*/ logInfo("Received " + tweetProcessedDF.count.toString() + " tweets") /*<< INFO >>*/
 	  /*<<INFO>>*/logInfo("Tweets elaborated! >>>>  Now saving to Cassandra... ")/*<<INFO>>*/
 	  myDataStorer.storeTweetsToCASSANDRA(tweetProcessedDF)
     /*<<INFO>>*/  logInfo("Tweets storing completed!") /*<<INFO>>*/
@@ -451,6 +461,7 @@ abstract class TweetApp(processingType : String) extends Serializable with Loggi
 	
 	  /*<<INFO>>*/logInfo("Elaborating hashtags...")/*<<INFO>>*/
 	  hashtagDF.show()
+	  /*<< INFO >>*/ logInfo("Found "    + hashtagDF.count.toString()    + " hashtags") /*<< INFO >>*/
 	  /*<<INFO>>*/logInfo("Hashtag elaborated! >>>>  Now saving to Cassandra... ")/*<<INFO>>*/
 	  myDataStorer.storeHashtagToCASSANDRA(hashtagDF.select($"tweet_id", $"hashtag"))
     /*<<INFO>>*/  logInfo("Hashtag storing completed!") /*<<INFO>>*/

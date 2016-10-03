@@ -212,6 +212,10 @@ object TweetInfoHandler extends Serializable with Logging{
 		$"lang",
 		$"user.id".as("user_id"),
 		$"user.name".as("user_name"),
+		
+		$"user.screen_name".as("screen_name"),
+		when($"in_reply_to_status_id".isNull, false).otherwise(true).as("retweets_something"),
+		
 		$"text",
 		$"timestamp_ms".as("time"),
 		
@@ -266,6 +270,10 @@ object TweetInfoHandler extends Serializable with Logging{
 			$"lang",
 			$"user.id".as("user_id"),
 			$"user.name".as("user_name"),
+			
+			$"user.screen_name".as("screen_name"),
+			when($"in_reply_to_status_id".isNull, false).otherwise(true).as("retweets_something"),
+			
 			$"text",
 			$"timestamp_ms".as("time"),
 			
@@ -312,6 +320,10 @@ object TweetInfoHandler extends Serializable with Logging{
 			$"lang",
 			$"user.id".as("user_id"),
 			$"user.name".as("user_name"),
+			
+			$"user.screen_name".as("screen_name"),
+			when($"in_reply_to_status_id".isNull, false).otherwise(true).as("retweets_something"),
+			
 			$"text",
 			$"timestamp_ms".as("time"),
 			
@@ -360,6 +372,10 @@ object TweetInfoHandler extends Serializable with Logging{
 			$"lang",
 			$"user.id".as("user_id"),
 			$"user.name".as("user_name"),
+			
+			$"user.screen_name".as("screen_name"),
+			when($"in_reply_to_status_id".isNull, false).otherwise(true).as("retweets_something"),
+			
 			$"text",
 			$"timestamp_ms".as("time"),
 			
