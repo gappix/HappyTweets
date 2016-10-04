@@ -1,6 +1,7 @@
 package it.reti.spark.sentiment
 
 import org.apache.spark.SparkContext
+import org.apache.log4j.{Logger, Level}
 import org.apache.spark.SparkContext._
 import org.apache.spark.SparkConf
 import org.apache.spark.sql._
@@ -35,7 +36,12 @@ abstract class TweetApp(processingType : String) extends Serializable with Loggi
 	
 	
 
-	
+	Logger.getRootLogger.setLevel(Level.INFO)
+  
+  Logger.getLogger("org.apache.spark").setLevel(Level.WARN)
+  Logger.getLogger("it.reti.spark.sentiment").setLevel(Level.INFO)
+  Logger.getLogger("it.reti.spark.sentiment.TweetApp").setLevel(Level.INFO)
+  
 	
 	
 	
@@ -443,7 +449,7 @@ abstract class TweetApp(processingType : String) extends Serializable with Loggi
 	
 	
 	  /*<<INFO>>*/logInfo("Elaborating tweets...")/*<<INFO>>*/
-	  tweetProcessedDF.show()
+	  tweetProcessedDF.cache.show()
 	  /*<< INFO >>*/ logInfo("Received " + tweetProcessedDF.count.toString() + " tweets") /*<< INFO >>*/
 	  /*<<INFO>>*/logInfo("Tweets elaborated! >>>>  Now saving to Cassandra... ")/*<<INFO>>*/
 	  myDataStorer.storeTweetsToCASSANDRA(tweetProcessedDF)
@@ -452,15 +458,15 @@ abstract class TweetApp(processingType : String) extends Serializable with Loggi
 	  
 	
 	  /*<<INFO>>*/logInfo("Elaborating sentiment...")/*<<INFO>>*/
-	  sentimentDF.show()
-	  /*<<INFO>>*/logInfo("Sentiment elaborated! >>>>  Now saving to Cassandra...")/*<<INFO>>*/
+	  sentimentDF.cache.show()
+	  /*<<INFO>>*/logError("Sentiment elaborated! >>>>  Now saving to Cassandra...")/*<<INFO>>*/
 	  myDataStorer.storeSentimentToCASSANDRA(sentimentDF)
-    /*<<INFO>>*/  logInfo("Sentiment storing completed!")/*<<INFO>>*/
+    /*<<INFO>>*/  logWarning("Sentiment storing completed!")/*<<INFO>>*/
 	
 	  
 	
 	  /*<<INFO>>*/logInfo("Elaborating hashtags...")/*<<INFO>>*/
-	  hashtagDF.show()
+	  hashtagDF.cache.show()
 	  /*<< INFO >>*/ logInfo("Found "    + hashtagDF.count.toString()    + " hashtags") /*<< INFO >>*/
 	  /*<<INFO>>*/logInfo("Hashtag elaborated! >>>>  Now saving to Cassandra... ")/*<<INFO>>*/
 	  myDataStorer.storeHashtagToCASSANDRA(hashtagDF.select($"tweet_id", $"hashtag"))
@@ -469,12 +475,18 @@ abstract class TweetApp(processingType : String) extends Serializable with Loggi
 	
 	  
 	  /*<<INFO>>*/logInfo("Evaluating topics...")/*<<INFO>>*/
-	  topicsDF.show()
+	  topicsDF.cache.show()
 	  /*<<INFO>>*/logInfo("Topics evaluated! >>>>  Now saving to Cassandra...")/*<<INFO>>*/
 	  myDataStorer.storeTopicsToCASSANDRA(topicsDF)
     /*<<INFO>>*/  logInfo("Topics storing completed!") /*<<INFO>>*/
 	
-	
+	 
+    
+    
+    tweetProcessedDF.unpersist()
+    sentimentDF.unpersist()
+    hashtagDF.unpersist()
+    topicsDF.unpersist()
 	
 	
   }//end storeDataFrameToCASSANDRA method //

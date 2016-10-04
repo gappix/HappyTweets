@@ -11,6 +11,9 @@ import org.apache.spark.streaming.twitter._
 import twitter4j.Status
 
 
+import org.apache.log4j.{Level, Logger}
+
+
 
 
 
@@ -65,9 +68,16 @@ object ContextHandler extends Logging {
   private val sqlContextHIVE = new HiveContext(sc)
   //sqlContextHIVE.setConf("spark.sql.orc.compress", "SNAPPY") 
   
+  
+  //val rootLogger = Logger.getRootLogger()
+ // rootLogger.setLevel(Level.ERROR)
+  
+ // sc.setLogLevel(Level.WARN)
+  
+  
   private val status = "ok"
    
-  /*<<<INFO>>>*/ logInfo("Contexts created!")
+  /*<<<INFO>>>*/ logWarning("Contexts created!")
 
   
   //....................................................................................................................

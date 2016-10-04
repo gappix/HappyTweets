@@ -14,14 +14,14 @@ object LogHandler extends Serializable {
  /*--------------------------------------------------
   * SETTING LOG LEVELS
   *---------------------------------------------------*/
-  Logger.getRootLogger.setLevel(Level.INFO)
+/*  Logger.getRootLogger.setLevel(Level.INFO)
   
   Logger.getLogger("org.apache.spark").setLevel(Level.INFO)
   Logger.getLogger("it.reti.spark.sentiment").setLevel(Level.INFO)
   Logger.getLogger("it.reti.spark.sentiment.TweetApp").setLevel(Level.INFO)
   
   
-  
+  */
   
   
   
