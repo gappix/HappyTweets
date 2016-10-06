@@ -475,7 +475,7 @@ abstract class TweetApp(processingType : String) extends Serializable with Loggi
 	  hashtagDF.cache.show()
 	  /*<< INFO >>*/ //logInfo("Found "    + hashtagDF.count.toString()    + " hashtags") /*<< INFO >>*/
 	  /*<<INFO>>*/logInfo("Hashtag elaborated! >>>>  Now saving to Cassandra... ")/*<<INFO>>*/
-	  myDataStorer.storeHashtagToCASSANDRA(hashtagDF.select( $"tweet_id", $"hashtag"))
+	  myDataStorer.storeHashtagToCASSANDRA(hashtagDF.select(  concat($"tweet_id", $"hashtag").as("row_id"), $"tweet_id", $"hashtag"))
     /*<<INFO>>*/  logInfo("Hashtag storing completed!") /*<<INFO>>*/
 	
 	

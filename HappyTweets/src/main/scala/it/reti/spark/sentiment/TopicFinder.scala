@@ -200,7 +200,7 @@ object TopicFinder extends Logging{
     
     
     val filteredTopicsDF = tweetsTopicsDF.filter(not(isnull(identifyNull(tweetsTopicsDF("topic")))))
-                                          .select( $"tweet_id", $"topic")
+                                          .select( concat($"tweet_id", $"topic").as("row_id"), $"tweet_id", $"topic")
 
 
     

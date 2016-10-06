@@ -31,8 +31,8 @@ class DataStorer(processingType: String) extends Serializable with Logging{
   //CASSANDRA tables
   val tableTweets     = "event_processed_" + processingType
   val tableSentiment  = "event_sentiment_" + processingType
-  val tableHashtag    = "event_hashtag_"   + processingType
-  val tableTopics     = "event_topic_"    + processingType
+  val tableHashtag    = "event_hashtags_"   + processingType
+  val tableTopics     = "event_topics_"    + processingType
  
   //CASSANDRA keyspace
   val keyspaceCassandra = "qlik"
