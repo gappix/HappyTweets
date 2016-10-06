@@ -458,7 +458,7 @@ abstract class TweetApp(processingType : String) extends Serializable with Loggi
 	  tweetProcessedDF.cache.show()
 	  /*<< INFO >>*/ //logInfo("Received " + tweetProcessedDF.count.toString() + " tweets") /*<< INFO >>*/
 	  /*<<INFO>>*/logInfo("Tweets elaborated! >>>>  Now saving to Cassandra... ")/*<<INFO>>*/
-	  myDataStorer.storeTweetsToCASSANDRA(tweetProcessedDF)
+	  //myDataStorer.storeTweetsToCASSANDRA(tweetProcessedDF)
     /*<<INFO>>*/  logInfo("Tweets storing completed!") /*<<INFO>>*/
 	
 	  
@@ -466,7 +466,7 @@ abstract class TweetApp(processingType : String) extends Serializable with Loggi
 	  /*<<INFO>>*/logInfo("Elaborating sentiment...")/*<<INFO>>*/
 	  sentimentDF.cache.show()
 	  /*<<INFO>>*/logInfo("Sentiment elaborated! >>>>  Now saving to Cassandra...")/*<<INFO>>*/
-	  myDataStorer.storeSentimentToCASSANDRA(sentimentDF)
+	  //myDataStorer.storeSentimentToCASSANDRA(sentimentDF)
     /*<<INFO>>*/  logInfo("Sentiment storing completed!")/*<<INFO>>*/
 	
 	  
@@ -475,7 +475,7 @@ abstract class TweetApp(processingType : String) extends Serializable with Loggi
 	  hashtagDF.cache.show()
 	  /*<< INFO >>*/ //logInfo("Found "    + hashtagDF.count.toString()    + " hashtags") /*<< INFO >>*/
 	  /*<<INFO>>*/logInfo("Hashtag elaborated! >>>>  Now saving to Cassandra... ")/*<<INFO>>*/
-	  myDataStorer.storeHashtagToCASSANDRA(hashtagDF.select(  concat($"tweet_id", $"hashtag").as("row_id"), $"tweet_id", $"hashtag"))
+	  //myDataStorer.storeHashtagToCASSANDRA(hashtagDF.select(  concat($"tweet_id", $"hashtag").as("row_id"), $"tweet_id", $"hashtag"))
     /*<<INFO>>*/  logInfo("Hashtag storing completed!") /*<<INFO>>*/
 	
 	
@@ -483,7 +483,7 @@ abstract class TweetApp(processingType : String) extends Serializable with Loggi
 	  /*<<INFO>>*/logInfo("Evaluating topics...")/*<<INFO>>*/
 	  topicsDF.cache.show()
 	  /*<<INFO>>*/logInfo("Topics evaluated! >>>>  Now saving to Cassandra...")/*<<INFO>>*/
-	  myDataStorer.storeTopicsToCASSANDRA(topicsDF)
+	  //myDataStorer.storeTopicsToCASSANDRA(topicsDF)
     /*<<INFO>>*/  logInfo("Topics storing completed!") /*<<INFO>>*/
 	
 	 
