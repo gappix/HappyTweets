@@ -47,7 +47,7 @@ object Sentix extends Serializable with Logging{
     private val inputSENTIX = sc.textFile("/home/administrator/BigData/HappyQlik/Sentix.txt")
 	
 	// HIVE ---> /user/maria_dev/Tutorials/SPARKTwitterAnalyzer/Sentix.txt
-	// CASSY --> /home/administrator/BigData/HappyQLik/Sentix.txt
+	// CASSY --> /home/administrator/BigData/HappyQlik/Sentix.txt
     
     
     
@@ -72,7 +72,7 @@ object Sentix extends Serializable with Logging{
    private val sentix_absoluteDF = sentixDF
 	   .where(not($"sentix_word".contains("_")))
      .select(
-               $"sentix_word",
+               lower($"sentix_word").as("sentix_word"),
                evaluate_AbsoluteSentiment(sentixDF("positive_score"), sentixDF("negative_score")).as("absolute_sentiment"),
                $"positive_score",
                $"negative_score"

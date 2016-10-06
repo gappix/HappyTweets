@@ -10,6 +10,7 @@ import org.apache.spark.sql.functions._
 import scala.reflect.runtime.universe
 import org.apache.spark.sql.hive.HiveContext
 import org.apache.spark.Logging
+import scala.util.{Success,Failure,Try}
 
 
 
@@ -36,7 +37,7 @@ abstract class TweetApp(processingType : String) extends Serializable with Loggi
 	
 	
 
-	Logger.getRootLogger.setLevel(Level.INFO)
+	Logger.getRootLogger.setLevel(Level.WARN)
   
   Logger.getLogger("org.apache.spark").setLevel(Level.WARN)
   Logger.getLogger("it.reti.spark.sentiment").setLevel(Level.INFO)
@@ -118,11 +119,11 @@ abstract class TweetApp(processingType : String) extends Serializable with Loggi
     val readyTweetsDF = tweetsDF.filter(not(isnull($"tweet_id")))
 	    
 	                              //Family Filter
-	                              .filter(not(  $"text".contains("porno")     ||
-	                                            $"text".contains("videochat") ||
-	                                            $"text".contains("sesso")     ||
-	                                            $"text".contains("puttana")   ||
-	                                            $"text".contains("troia")         ))
+	                              .filter(not(  lower($"text").contains("porno")     ||
+	                                            lower($"text").contains("videochat") ||
+	                                            lower($"text").contains("sesso")     ||
+	                                            lower($"text").contains("puttana")   ||
+	                                            lower($"text").contains("troia")         ))
 	    
 	                              .select(
 													                $"tweet_id",
@@ -185,7 +186,7 @@ abstract class TweetApp(processingType : String) extends Serializable with Loggi
 	  //>>>>>>>>>> MEMORY PERSIST >>>>>>>>> |##|##|##|
 	  
 	  
-	  
+
 	  
   
   /*.............................................*
@@ -413,17 +414,22 @@ abstract class TweetApp(processingType : String) extends Serializable with Loggi
     Otherwise a new DataFrame with "tweet_id", "text" and "hashtag= null" is passed.
       */
 	  
-	  if(hashtagDF.count() > 0) TopicFinder.findTopic_hashtag_and_text(hashtagDF)
-	  else
+	  
+    val t = Try(hashtagDF.first())
+    
+    t match{
+      
+      case Success(_)  => TopicFinder.findTopic_hashtag_and_text(hashtagDF)
+      
+      case Failure(_)  => TopicFinder.findTopic_text_only(   tweetsDF.select(
+                                                                    				  $"tweet_id",
+                                                                    				  $"text",
+                                                                    				  lit(null: String).as("hashtag")
+                                                                    			  )//end select
+                                                           )
+    }
+    
 
-		  TopicFinder.findTopic_text_only(
-			
-			  tweetsDF.select(
-				  $"tweet_id",
-				  $"text",
-				  lit(null: String).as("hashtag")
-			  )
-		  )
 	  
     
   }// end elaborateTopics method //
@@ -450,7 +456,7 @@ abstract class TweetApp(processingType : String) extends Serializable with Loggi
 	
 	  /*<<INFO>>*/logInfo("Elaborating tweets...")/*<<INFO>>*/
 	  tweetProcessedDF.cache.show()
-	  /*<< INFO >>*/ logInfo("Received " + tweetProcessedDF.count.toString() + " tweets") /*<< INFO >>*/
+	  /*<< INFO >>*/ //logInfo("Received " + tweetProcessedDF.count.toString() + " tweets") /*<< INFO >>*/
 	  /*<<INFO>>*/logInfo("Tweets elaborated! >>>>  Now saving to Cassandra... ")/*<<INFO>>*/
 	  myDataStorer.storeTweetsToCASSANDRA(tweetProcessedDF)
     /*<<INFO>>*/  logInfo("Tweets storing completed!") /*<<INFO>>*/
@@ -459,17 +465,17 @@ abstract class TweetApp(processingType : String) extends Serializable with Loggi
 	
 	  /*<<INFO>>*/logInfo("Elaborating sentiment...")/*<<INFO>>*/
 	  sentimentDF.cache.show()
-	  /*<<INFO>>*/logError("Sentiment elaborated! >>>>  Now saving to Cassandra...")/*<<INFO>>*/
+	  /*<<INFO>>*/logInfo("Sentiment elaborated! >>>>  Now saving to Cassandra...")/*<<INFO>>*/
 	  myDataStorer.storeSentimentToCASSANDRA(sentimentDF)
-    /*<<INFO>>*/  logWarning("Sentiment storing completed!")/*<<INFO>>*/
+    /*<<INFO>>*/  logInfo("Sentiment storing completed!")/*<<INFO>>*/
 	
 	  
 	
 	  /*<<INFO>>*/logInfo("Elaborating hashtags...")/*<<INFO>>*/
 	  hashtagDF.cache.show()
-	  /*<< INFO >>*/ logInfo("Found "    + hashtagDF.count.toString()    + " hashtags") /*<< INFO >>*/
+	  /*<< INFO >>*/ //logInfo("Found "    + hashtagDF.count.toString()    + " hashtags") /*<< INFO >>*/
 	  /*<<INFO>>*/logInfo("Hashtag elaborated! >>>>  Now saving to Cassandra... ")/*<<INFO>>*/
-	  myDataStorer.storeHashtagToCASSANDRA(hashtagDF.select($"tweet_id", $"hashtag"))
+	  myDataStorer.storeHashtagToCASSANDRA(hashtagDF.select( $"tweet_id", $"hashtag"))
     /*<<INFO>>*/  logInfo("Hashtag storing completed!") /*<<INFO>>*/
 	
 	

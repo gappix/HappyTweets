@@ -31,7 +31,7 @@ object TopicFinder extends Logging{
   private val topics = new Array[Topic](4)
   
               topics(0) = Topic( "business_intelligence",
-                                  Seq("businessintelligence", "business intelligence", "qlik", "qlikview", "qlik view", "qliksense", "qlik sense", "analytics", "data analytics", "dataanalytics", "datascience" )
+                                  Seq("businessintelligence", "business intelligence", "qlikview", "qlik view", "qliksense", "qlik sense", "analytics", "data analytics", "dataanalytics", "datascience" )
                                   )
   
               topics(1) = Topic( "big_data",
@@ -43,7 +43,7 @@ object TopicFinder extends Logging{
                                   )
   
               topics(3) =  Topic( "innovazione",
-                                  Seq("startup", "start up ", "innovazione", "nuove tecnologie", "deeplearning", "artificialintelligence","innovation", "tech ", "bigdata", "digitaltransformation", "impresa")
+                                  Seq("startup", "start up ", "innovazione", "nuove tecnologie", "deeplearning", "artificialintelligence","innovation", "tech ", "digitaltransformation", "impresa")
                                   )
   
   
@@ -73,7 +73,7 @@ object TopicFinder extends Logging{
                   for (topic <- topics){
                     
                     //if a topic is found, topic's name is added to topics String list
-                    if (topicIsFound(topic, hashtags, text))     topicsFound +=  " " + topic.name
+                    if (topicIsFound(topic, hashtags, text))     topicsFound +=   topic.name + ", "
                     
                   }
                   
@@ -126,9 +126,13 @@ object TopicFinder extends Logging{
       .agg(concat_ws(", ", collect_list("hashtag"))
         .as("hashtag_list"))
   
-    
-    findTopic_general(groupedHashtagsDF)
+        
+        
   
+    findTopic_general(groupedHashtagsDF)
+
+    
+    
   
   }//end findTopic_hashtag_and_text method //
   
@@ -153,7 +157,11 @@ object TopicFinder extends Logging{
                                           $"text",
                                           lit("").as("hashtag_list")
                                         )//end select
-    findTopic_general(selectedFieldsDF)
+                                                                         
+    val output =  findTopic_general(selectedFieldsDF)
+    
+    
+    output
     
   }//end findTopic_hashtag_and_text method //
   
@@ -176,18 +184,24 @@ object TopicFinder extends Logging{
 
   
     
-    val rawTopicsDF = inputTweet.select($"tweet_id", findTopics($"hashtag_list", $"text").as("topic_list"))
+    val rawTopicsDF = inputTweet.select(      
+                                          $"tweet_id", 
+                                          findTopics(inputTweet("hashtag_list"), inputTweet("text")).as("topic_list")
+                                          )
+                                          
 
     /*
     explode  topicList (n-words)*(1-row) field in
              topic     (1-words)*(n-rows) one
      */
     val tweetsTopicsDF = rawTopicsDF.explode("topic_list", "topic") {
-                                                                      topicList: String => topicList.split(" ")
+                                                                      topicList: String => topicList.split(",")
                                                                     }
     
+    
     val filteredTopicsDF = tweetsTopicsDF.filter(not(isnull(identifyNull(tweetsTopicsDF("topic")))))
-                                          .select($"tweet_id", $"topic")
+                                          .select( $"tweet_id", $"topic")
+
 
     
     filteredTopicsDF

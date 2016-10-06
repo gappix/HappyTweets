@@ -109,7 +109,7 @@ class TweetStreamingJSONApp(locationToObserve : String, batchInterval: Int) exte
   
       
             /*<<< INFO >>>*/ logInfo(rdd.toString() +  " started!")
-            val dataDF  = sqlContext.read.json(rdd)
+            val dataDF  = sqlContext.read.json(rdd).persist()
 
 
             /*....................................................
@@ -121,7 +121,7 @@ class TweetStreamingJSONApp(locationToObserve : String, batchInterval: Int) exte
             if(Try(dataDF("id")).isSuccess)    prepareData(dataDF)
                   
  
-            // dataDF.unpersist()
+            dataDF.unpersist()
   
       /*<<< INFO >>>*/ logInfo(rdd.toString() +  " Processing completed!") /*<<< INFO >>>*/
       /*<<< INFO >>>*/ logInfo("\n\n ========================================== END ROUND ============================================>>>\n\n\n") /*<<< INFO >>>*/
