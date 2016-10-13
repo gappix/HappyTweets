@@ -14,7 +14,7 @@ libraryDependencies ++=   Seq( "org.apache.spark" % "spark-core_2.11" % "2.0.0",
 
 */
 
-val sparkVersion = "2.0.0"
+val sparkVersion = "2.0.1"
 
 
 resolvers ++= Seq(

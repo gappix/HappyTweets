@@ -1,18 +1,17 @@
-package it.reti.spark.sentiment
+package horizon
 
-
-
-import org.apache.spark.sql.SparkSession
-import org.apache.spark.sql.{DataFrame, Row}
+import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.apache.spark.sql.functions._
-import org.apache.spark.sql.types.{LongType, StringType, StructField, StructType}
 
 import scala.util.Try
 
+
+
+/*|||||||||||||||||||||||||||||||||||||||||||   JSON INFO HANDLER   |||||||||||||||||||||||||||||||||||||||||||||||||*/
 /**
 	*
 	*/
-class TweetInfoHandler(spark: SparkSession) extends Serializable{
+class JSONInfoHandler(spark: SparkSession) extends Serializable{
 	
 
 	import spark.implicits._
@@ -408,7 +407,9 @@ class TweetInfoHandler(spark: SparkSession) extends Serializable{
 
 
 
-}// end  TweetInfoHandler class |||||||||||||||||||||||||||||
+}
+
+// end  TweetInfoHandler class |||||||||||||||||||||||||||||
 
 
 
@@ -430,7 +431,7 @@ class TweetInfoHandler(spark: SparkSession) extends Serializable{
 	* TweetInfoHandler companion object
 	* Instantiates a new class with passed SparkSession parameter
  */
-object TweetInfoHandler{
+object JSONInfoHandler{
 
 
 	/*..................................................................................................................*/
@@ -439,6 +440,8 @@ object TweetInfoHandler{
 		* @param spark
 		* @return
 		*/
-	def apply(spark : SparkSession):TweetInfoHandler = new TweetInfoHandler(spark)
+	def apply(spark : SparkSession):JSONInfoHandler = new JSONInfoHandler(spark)
 
-}// end  TweetInfoHandler object ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+}
+
+// end  TweetInfoHandler object ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||

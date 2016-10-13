@@ -1,8 +1,7 @@
-package it.reti.spark.sentiment
+package horizon
 
-
-import org.apache.spark.SparkConf
 import org.apache.log4j.LogManager
+import org.apache.spark.SparkConf
 
 
 
@@ -12,22 +11,31 @@ import org.apache.log4j.LogManager
 /**
  * This object instantiates all SPARK Contexts once, and then retrieves them with appropriate methods
  */
-
 object ContextHandler {
 
 
 
-  @transient lazy val log = LogManager.getLogger("myLogger")
-  
-  /*<<<INFO>>>*/ log.info("creating SPARK Contexts...")
-  
+  @transient lazy val log = LogManager.getLogger("horizon")
+
+
+
+
+
+	/*<<<INFO>>>*/ log.info("creating SPARK Contexts...")
+
+
   //SPARK contexts creation
   private val conf = new SparkConf()
-    .setAppName("Happy Qlik")
+    .setAppName("2Horizons")
     .setMaster("local[*]")
     .set("spark.cassandra.connection.host", "10.1.2.172")
-    //Kryo Options
-    .set("spark.serializer","org.apache.spark.serializer.KryoSerializer")
+
+
+
+
+
+  //Kryo Options
+    /*.set("spark.serializer","org.apache.spark.serializer.KryoSerializer")
     .registerKryoClasses( Array(
       classOf[scala.collection.mutable.WrappedArray[_]],
       classOf[Array[org.apache.spark.streaming.receiver.Receiver[_]]],
@@ -45,7 +53,7 @@ object ContextHandler {
       classOf[org.apache.spark.unsafe.types.UTF8String],
       classOf[scala.collection.mutable.WrappedArray.ofRef[_]],
       classOf[it.reti.spark.sentiment.SocketReceiver]    //classOf[org.apache.spark.streaming.twitter.TwitterReceiver]
-    ))
+    ))*/
     //.set("spark.kryo.registrationRequired","true")
     //Spark logger options
     //.set("spark.eventLog.enabled","true")
@@ -61,11 +69,11 @@ object ContextHandler {
   private val sqlContextHIVE = new HiveContext(sc)
   */
 
-  private val status = "ok"
+
+
+
+
   /*<<<INFO>>>*/ log.info("Contexts created!")
-
-
-
 
 
 
@@ -78,15 +86,7 @@ object ContextHandler {
 
 
 
-  /*..................................................................................................................*/
-  /**
-   * method to instantiate object and check if successful
-   * @return string status
-   */
-  def setAllContexts = status
-  
-
   
   
   
-}//end ContextHandler object //
+}//end ContextHandler object |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||

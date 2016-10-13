@@ -1,14 +1,7 @@
 package it.reti.spark.sentiment
 
-import org.apache.spark.SparkContext
-import org.apache.spark.SparkContext._
-import org.apache.spark.SparkConf
 import org.apache.spark.sql._
-import org.apache.spark.sql.types._
-import org.apache.spark.sql.functions._
-import scala.reflect.runtime.universe
-import org.apache.spark.sql.hive.HiveContext
-  
+
 
 /* ||||||||||||||||||||||||||||||||||||||||| TWEET BATCH APP |||||||||||||||||||||||||||||||||||||||||||||||||||||||||*/
 /**
@@ -35,11 +28,10 @@ class TweetBatchApp(fileNameAndPath : String) extends TweetJSONApp("batch") {
   override def acquireData() {
     
     
-    //HIVE Context import
-    val sqlContextHIVE = ContextHandler.getSqlContextHIVE
-    import sqlContextHIVE.implicits._
+    val spark = SparkSession.builder().getOrCreate()
 
-    
+    import spark.implicits._
+
     
     
     
@@ -49,7 +41,7 @@ class TweetBatchApp(fileNameAndPath : String) extends TweetJSONApp("batch") {
     
     
     // Tweet json storage load into a DataFrame
-    val inputTWEETS = sqlContextHIVE.read.json(fileNameAndPath)
+    val inputTWEETS = spark.read.json(fileNameAndPath)
    
     
     // Filtering based on language field
@@ -59,7 +51,7 @@ class TweetBatchApp(fileNameAndPath : String) extends TweetJSONApp("batch") {
     
     
    //DataFrame is created by selecting interested fields from input DataFrame
-    prepareData(englishTWEETS)
+    prepareData(englishTWEETS, spark)
     
     
 

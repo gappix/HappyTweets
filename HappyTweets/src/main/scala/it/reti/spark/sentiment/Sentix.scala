@@ -1,14 +1,10 @@
 package it.reti.spark.sentiment
 
-import scala.reflect.runtime.universe
-import org.apache.spark.Logging
-import org.apache.spark.SparkContext
-import org.apache.spark.storage.StorageLevel
-import org.apache.spark.util.SizeEstimator
+
 import org.apache.spark.sql._
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.functions.udf
-import java.lang.Math.sqrt
+
 
 
 
@@ -30,21 +26,21 @@ case class Sent(
  * This class loads the Sentix dictionary from a HDFS text file and structures it as DataFrame
  * It can be accessed by other classes by a getHedonometer invocation   
  */    
-object Sentix extends Serializable with Logging{
+object Sentix extends Serializable {
   
   
   
     //getting Contexts
-    val sc = ContextHandler.getSparkContext
-    val sqlContextHIVE = ContextHandler.getSqlContextHIVE
+
+    val spark  = SparkSession.builder().getOrCreate()
     //import methods for DataFrame/RDD conversion
-    import sqlContextHIVE.implicits._
+    import spark.implicits._
     
     
     
     
     //load textfile RDD
-    private val inputSENTIX = sc.textFile("/home/administrator/BigData/HappyQlik/Sentix.txt")
+    private val inputSENTIX = spark.sparkContext.textFile("/home/administrator/BigData/HappyQlik/Sentix.txt")
 	
 	// HIVE ---> /user/maria_dev/Tutorials/SPARKTwitterAnalyzer/Sentix.txt
 	// CASSY --> /home/administrator/BigData/HappyQlik/Sentix.txt
@@ -93,7 +89,7 @@ object Sentix extends Serializable with Logging{
    sentix_absoluteDF.show()
     
     //BROADCAST the data loaded to all cluster nodes
-    private val broadCastedSentix = sc.broadcast(sentix_absoluteDF)
+    private val broadCastedSentix = spark.sparkContext.broadcast(sentix_absoluteDF)
      
     
 	

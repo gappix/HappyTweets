@@ -1,24 +1,10 @@
 package it.reti.spark.sentiment
 
-import scala.reflect.runtime.universe
 
-import org.apache.spark.SparkContext
-import org.apache.spark.sql.Row
-import org.apache.spark.sql.SQLContext
-import org.apache.spark.sql.functions.udf
-import org.apache.spark.sql.hive.HiveContext
-import org.apache.spark.sql.types.DoubleType
-import org.apache.spark.sql.types.LongType
-import org.apache.spark.sql.types.StringType
-import org.apache.spark.sql.types.StructField
-import org.apache.spark.sql.types.StructType
-import org.apache.spark.sql.types.DateType
-import org.apache.spark.sql.functions._ 
+
 import org.apache.spark.streaming.Seconds
 import org.apache.spark.streaming.StreamingContext
-import org.apache.spark.streaming.twitter.TwitterUtils
-import org.apache.spark.storage.StorageLevel
-import org.apache.spark.Logging
+import org.apache.spark.sql._
 
 import scala.util.Try
 
@@ -36,19 +22,23 @@ case class HashtagTweets( tweet_id: Long, hashtagList: String, text: String)
 
 /*||||||||||||||||||||||||||||||||||||||||||||  TWEET STREAMING APP   ||||||||||||||||||||||||||||||||||||||||||||||||*/
 /**
- * This class is an extension of TweetApp one.
- * It implements a specific Run method for streaming data retrieving from a twitter stream spout.
- * It then uses upper-class methods for data elaboration and result storing.  
- * 
- * @param locationToObserve: String containing an integer number according to Location class options
+  * This class is an extension of TweetApp one.
+  * It implements a specific Run method for streaming data retrieving from a twitter stream spout.
+  * It then uses upper-class methods for data elaboration and result storing.
+  *
+  * @param locationToObserve: String containing an integer number according to Location class options
+  * @param batchInterval: Integer value which indicates how many seconds each batch should last
  */
-class TweetStreamingJSONApp(locationToObserve : String, batchInterval: Int) extends TweetJSONApp("streaming") with Logging {
-  
-  
+ class TweetStreamingJSONApp(locationToObserve : String, batchInterval: Int) extends TweetJSONApp("streaming") {
 
-  
-  
-  
+
+
+  @transient lazy override val log = org.apache.log4j.LogManager.getLogger("myLogger")
+
+
+
+
+
   /*.................................................................................................................*/
   /**
    * Run method OVERRIDED in order to fulfill streaming app processing needings
@@ -68,12 +58,10 @@ class TweetStreamingJSONApp(locationToObserve : String, batchInterval: Int) exte
     
     
     
-    //import context needed
-    val sc = ContextHandler.getSparkContext
-    val ssc = new StreamingContext(sc, Seconds(intervalSeconds))
-    val sqlContext = ContextHandler.getSqlContextHIVE
-    import sqlContextHIVE.implicits._
-    
+    //spark streaming context created
+    val conf= ContextHandler.getConf
+    val ssc = new StreamingContext(conf, Seconds(intervalSeconds))
+
     
     
     
@@ -89,12 +77,12 @@ class TweetStreamingJSONApp(locationToObserve : String, batchInterval: Int) exte
      *-----------------------------------------------*/
     
     
-    /*<<< INFO >>>*/ logInfo("Opening Twitter stream...") /*<<< INFO >>>*/
+    /*<<< INFO >>>*/ log.info("Opening Twitter stream...") /*<<< INFO >>>*/
     
     val myReceiver = new SocketReceiver(portToListen)
     val tweetsStream = ssc.receiverStream(myReceiver)
     
-    /*<<< INFO >>>*/ logInfo("Stream opened!") /*<<< INFO >>>*/
+    /*<<< INFO >>>*/ log.info("Stream opened!") /*<<< INFO >>>*/
   
   
   
@@ -107,9 +95,13 @@ class TweetStreamingJSONApp(locationToObserve : String, batchInterval: Int) exte
    	*---------------------------------------------------*/     
     tweetsStream.foreachRDD { rdd    =>
   
-      
-            /*<<< INFO >>>*/ logInfo(rdd.toString() +  " started!")
-            val dataDF  = sqlContext.read.json(rdd).persist()
+      //SparkSession created
+      val spark = SparkSession.builder.config(rdd.sparkContext.getConf).getOrCreate()
+      import spark.implicits._
+
+
+            /*<<< INFO >>>*/ log.info(rdd.toString() +  " started!")
+            val dataDF  = spark.read.json(rdd).persist()
 
 
             /*....................................................
@@ -118,13 +110,13 @@ class TweetStreamingJSONApp(locationToObserve : String, batchInterval: Int) exte
             *......................................................*/
               
             // if(dataDF.persist().count() > 0)    
-            if(Try(dataDF("id")).isSuccess)    prepareData(dataDF)
+            if(Try(dataDF("id")).isSuccess)    prepareData(dataDF, spark)
                   
  
             dataDF.unpersist()
   
-      /*<<< INFO >>>*/ logInfo(rdd.toString() +  " Processing completed!") /*<<< INFO >>>*/
-      /*<<< INFO >>>*/ logInfo("\n\n ========================================== END ROUND ============================================>>>\n\n\n") /*<<< INFO >>>*/
+      /*<<< INFO >>>*/ log.info(rdd.toString() +  " Processing completed!") /*<<< INFO >>>*/
+      /*<<< INFO >>>*/ log.info("\n\n ========================================== END ROUND ============================================>>>\n\n\n") /*<<< INFO >>>*/
     
 
 
@@ -153,68 +145,9 @@ class TweetStreamingJSONApp(locationToObserve : String, batchInterval: Int) exte
   
   
   
-  
-  /*.................................................................................................................*/
-  /**
-   * Method that
-   * @return (GeoLocation latitude, GeoLocation longitude) if present, (None None) otherwise
-   */
-  def getGeoLocationCoordinates( status : twitter4j.Status) : (Option[Double], Option[Double]) = {
-     
-    
-    status.getGeoLocation match{
-      
-      case null => (None, None)
-      case default => (Some(status.getGeoLocation.getLatitude),Some(status.getGeoLocation.getLongitude))
-   
-    }
-    
 
-  }// end getGeoLocationCoordinates method //
   
-  
-  
-  
-  
-  
-    /*.................................................................................................................*/
-  /**
-   * Method that
-   * @return (Place latitude, Place longitude) if present, (None None) otherwise
-   */
-    def getPlaceCoordinates(place : twitter4j.Place) : (Option[Double], Option[Double], String) = {
-    
-    
-  
-    
-    
-    if (place == null)  (None, None, "place null")
-    
-    else {
-       
-      val boundingBoxCoordinates  = place.getBoundingBoxCoordinates
-      val geometryCoordinates     = place.getGeometryCoordinates
-      val containerPlace          = place.getContainedWithIn
-        
-      //check Bounding Box Coordinates
-      if (boundingBoxCoordinates != null) (  Some(boundingBoxCoordinates.head.head.getLatitude),  Some(boundingBoxCoordinates.head.head.getLongitude),   "bounding box")
-      else {  
-              
-              //check Geometry Coordinates
-              if (geometryCoordinates != null)  (  Some(geometryCoordinates.head.head.getLatitude),  Some(geometryCoordinates.head.head.getLongitude),   "geometry")
-              else{
-                    
-                  //check Container Place
-                    if (containerPlace != null) getPlaceCoordinates(containerPlace.head)
-                    else (None, None, "everything is null")
-                  }
-            }
-        }
-      
-    
-  }// end getPlaceCoordinates
-    
-    
+
 
   
   

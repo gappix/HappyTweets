@@ -1,4 +1,4 @@
-package it.reti.spark.sentiment
+package horizon
 
 import org.apache.log4j.{Level, Logger}
 
@@ -23,6 +23,7 @@ object Main{
     //app logger globall settings
     Logger.getRootLogger.setLevel(Level.WARN)
     Logger.getLogger("org.apache.spark").setLevel(Level.WARN)
+		Logger.getLogger("horizon").setLevel(Level.INFO)
     Logger.getLogger("it.reti.spark.sentiment").setLevel(Level.INFO)
     Logger.getLogger("it.reti.spark.sentiment.TweetApp").setLevel(Level.INFO)
 
@@ -36,10 +37,11 @@ object Main{
 
 
        //BATCH case
+        /*
         case "batch" =>
             val fileName = "/root/RawTweets.json"
             new TweetBatchApp(fileName)
-
+				*/
 
 
         //STREAMING case
@@ -58,11 +60,19 @@ object Main{
 
     }//end match
     
-    
+
+
+
+
+
+
     
     //run selected App
-    if (app != null )  app.run
+    if (app != null ) {
 
+				Title.printTitle
+				app.acquireData
+		}
     
     
   }//end main method //
@@ -71,4 +81,4 @@ object Main{
 
   
   
-}//end main object ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+}//end main object |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||

@@ -1,52 +1,45 @@
 package it.reti.spark.sentiment
 
-import org.apache.spark.SparkContext
-import org.apache.log4j.{Logger, Level}
-import org.apache.spark.SparkContext._
-import org.apache.spark.SparkConf
+
+import org.apache.log4j.LogManager
 import org.apache.spark.sql._
-import org.apache.spark.sql.types._
 import org.apache.spark.sql.functions._
-import scala.reflect.runtime.universe
-import org.apache.spark.sql.hive.HiveContext
-import org.apache.spark.Logging
+
+
 import scala.util.{Success,Failure,Try}
 
 
 
-/*||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||*/
+/*|||||||||||||||||||||||||||||||||||||||||||||     TWEET APP     ||||||||||||||||||||||||||||||||||||||||||||||||||||*/
 /**
  *   This abstract class contains all main methods for processing execution.
  *   It must be extended implementing the Run method according to desired execution.
  *   Elaboration and storing methods are, on the contrary, common for every purpose.   
  */
-abstract class TweetApp(processingType : String) extends Serializable with Logging{
+abstract class TweetApp(processingType : String) extends Serializable {
 
-  
-  
-  
-  //data storer object
-  val myDataStorer = new DataStorer(processingType)
-  
-  
-  
-  //get sqlHIVE context and import methods for DataFrame/RDD conversion
-  val sqlContextHIVE = ContextHandler.getSqlContextHIVE
-  import sqlContextHIVE.implicits._
-	
-	
+
+	//logger val
+	@transient lazy val log = LogManager.getLogger("myLogger")
 	
 
-	Logger.getRootLogger.setLevel(Level.WARN)
-  
-  Logger.getLogger("org.apache.spark").setLevel(Level.WARN)
-  Logger.getLogger("it.reti.spark.sentiment").setLevel(Level.INFO)
-  Logger.getLogger("it.reti.spark.sentiment.TweetApp").setLevel(Level.INFO)
-  
-	
-	
-	
-	
+
+
+
+
+	/*.................................................................................................................*/
+	/**
+		* Entry method for this class
+		* It evoke local (overrided) acquireData method
+		*/
+	def run  = acquireData()
+
+
+
+
+
+
+
 	/*.................................................................................................................*/
   /** 
   * Method TRAIT.
@@ -67,7 +60,7 @@ abstract class TweetApp(processingType : String) extends Serializable with Loggi
 		* MUST BE OVERRIDED with correct input format
 		* @param rawTweets: DataFrame with input data from acquireData method
 		*/
-	def prepareData(rawTweets: DataFrame)
+	def prepareData(rawTweets: DataFrame, spark: SparkSession)
 		
 		
 
@@ -92,9 +85,13 @@ abstract class TweetApp(processingType : String) extends Serializable with Loggi
 		* @param hashtagsDF: DataFrame with all hashtags
 		* @note hashtagsDF can be null!
 		*/
-  def runElaborator(tweetsDF: DataFrame, hashtagsDF: DataFrame)  = {
+  def runElaborator(tweetsDF: DataFrame, hashtagsDF: DataFrame, spark: SparkSession)  = {
     
-    
+
+		//import sql implicits
+		import spark.implicits._
+
+
     /*
     It  joins tweets with an "Hedonometer dictionary" which assign to each word an happiness value.
     All values are then averaged obtaining an approximate sentiment value for each tweet message.
@@ -166,7 +163,7 @@ abstract class TweetApp(processingType : String) extends Serializable with Loggi
    * SENTIMENT evaluation
    *.............................................*/
 
-	  val sentimentDF = elaborateSentiment(readyTweetsDF)
+	  val sentimentDF = elaborateSentiment(readyTweetsDF, spark)
 
 
 
@@ -175,7 +172,7 @@ abstract class TweetApp(processingType : String) extends Serializable with Loggi
    * TOPICS detection
    *.............................................*/
 	  
-	  val topicsDF = elaborateTopics(hashtagsDF, readyTweetsDF)
+	  val topicsDF = elaborateTopics(hashtagsDF, readyTweetsDF, spark)
 	
 	
 	  
@@ -225,9 +222,14 @@ abstract class TweetApp(processingType : String) extends Serializable with Loggi
 		* @return a DataFrame with sentiment infos composed by following fields:
     *         "tweet_id", "sentiment_value", "matched_words", "tweet_words", "confidency_value"
 		*/
-  private def elaborateSentiment(inputTweetsDF: DataFrame) : DataFrame = {
-	  
-    
+  private def elaborateSentiment(inputTweetsDF: DataFrame, spark: SparkSession) : DataFrame = {
+
+
+
+
+		//sql implicits import
+		import spark.implicits._
+
     //get the hedonometer dictionary (as DataFrame)
     val sentixDF = Sentix.getSentix
     
@@ -335,8 +337,7 @@ abstract class TweetApp(processingType : String) extends Serializable with Loggi
     
     
     //joining tweets with Hedonometer dictionary
-    val sentimentTWEETS = sentixDF
-                                  .join(sanitizedTWEETS, sentixDF("sentix_word") === sanitizedTWEETS("word"), "inner")
+    val sentimentTWEETS = sentixDF.join(sanitizedTWEETS, sentixDF("sentix_word") === sanitizedTWEETS("word"), "inner")
 																	.groupBy("tweet_id")
                                   .agg( "absolute_sentiment"  -> "avg",
                                         "word"                -> "count" )
@@ -345,14 +346,13 @@ abstract class TweetApp(processingType : String) extends Serializable with Loggi
 	  
     
     //pack results into a new DataFrame
-    val sentimentConfidencyTWEETS = sentimentTWEETS
-                                                .join( wordCountByTweetDF, "tweet_id")
-                                                .select(  $"tweet_id",
-                                                          $"sentiment_value",
-                                                          $"matched_words",
-                                                          $"tweet_words",
-                                                          confidencyValue($"matched_words", $"tweet_words").as("confidency_value")
-                                                        )
+    val sentimentConfidencyTWEETS = sentimentTWEETS.join( wordCountByTweetDF, "tweet_id")
+																										.select(  $"tweet_id",
+																															$"sentiment_value",
+																															$"matched_words",
+																															$"tweet_words",
+																															confidencyValue($"matched_words", $"tweet_words").as("confidency_value")
+																														)
 	  
     sentimentConfidencyTWEETS
     
@@ -406,8 +406,12 @@ abstract class TweetApp(processingType : String) extends Serializable with Loggi
 	  *
 	  * @note there could be more than one row per tweet_id! there will be one row for each associated topic
     */
-  private def elaborateTopics(hashtagDF: DataFrame, tweetsDF: DataFrame): DataFrame ={
-    
+  private def elaborateTopics(hashtagDF: DataFrame, tweetsDF: DataFrame, spark: SparkSession): DataFrame ={
+
+
+		//sql implicits import
+		import spark.implicits._
+
     /*
     Check if hashtagDF is not null.
     If so, find topic with full infos accessible.
@@ -419,9 +423,9 @@ abstract class TweetApp(processingType : String) extends Serializable with Loggi
     
     t match{
       
-      case Success(_)  => TopicFinder.findTopic_hashtag_and_text(hashtagDF)
+      case Success(_)  => TopicFinder(spark).findTopic_hashtag_and_text(hashtagDF)
       
-      case Failure(_)  => TopicFinder.findTopic_text_only(   tweetsDF.select(
+      case Failure(_)  => TopicFinder(spark).findTopic_text_only(   tweetsDF.select(
                                                                     				  $"tweet_id",
                                                                     				  $"text",
                                                                     				  lit(null: String).as("hashtag")
@@ -454,37 +458,37 @@ abstract class TweetApp(processingType : String) extends Serializable with Loggi
 	
 	
 	
-	  /*<<INFO>>*/logInfo("Elaborating tweets...")/*<<INFO>>*/
+	  /*<<INFO>>*/log.info("Elaborating tweets...")/*<<INFO>>*/
 	  tweetProcessedDF.cache.show()
 	  /*<< INFO >>*/ //logInfo("Received " + tweetProcessedDF.count.toString() + " tweets") /*<< INFO >>*/
-	  /*<<INFO>>*/logInfo("Tweets elaborated! >>>>  Now saving to Cassandra... ")/*<<INFO>>*/
-	  myDataStorer.storeTweetsToCASSANDRA(tweetProcessedDF)
-    /*<<INFO>>*/  logInfo("Tweets storing completed!") /*<<INFO>>*/
+	  /*<<INFO>>*/log.info("Tweets elaborated! >>>>  Now saving to Cassandra... ")/*<<INFO>>*/
+	  //myDataStorer.storeTweetsToCASSANDRA(tweetProcessedDF)
+    /*<<INFO>>*/  log.info("Tweets storing completed!") /*<<INFO>>*/
 	
 	  
 	
-	  /*<<INFO>>*/logInfo("Elaborating sentiment...")/*<<INFO>>*/
+	  /*<<INFO>>*/log.info("Elaborating sentiment...")/*<<INFO>>*/
 	  sentimentDF.cache.show()
-	  /*<<INFO>>*/logInfo("Sentiment elaborated! >>>>  Now saving to Cassandra...")/*<<INFO>>*/
-	  myDataStorer.storeSentimentToCASSANDRA(sentimentDF)
-    /*<<INFO>>*/  logInfo("Sentiment storing completed!")/*<<INFO>>*/
+	  /*<<INFO>>*/log.info("Sentiment elaborated! >>>>  Now saving to Cassandra...")/*<<INFO>>*/
+	  //myDataStorer.storeSentimentToCASSANDRA(sentimentDF)
+    /*<<INFO>>*/  log.info("Sentiment storing completed!")/*<<INFO>>*/
 	
 	  
 	
-	  /*<<INFO>>*/logInfo("Elaborating hashtags...")/*<<INFO>>*/
+	  /*<<INFO>>*/log.info("Elaborating hashtags...")/*<<INFO>>*/
 	  hashtagDF.cache.show()
 	  /*<< INFO >>*/ //logInfo("Found "    + hashtagDF.count.toString()    + " hashtags") /*<< INFO >>*/
-	  /*<<INFO>>*/logInfo("Hashtag elaborated! >>>>  Now saving to Cassandra... ")/*<<INFO>>*/
-	  myDataStorer.storeHashtagToCASSANDRA(hashtagDF.select( $"tweet_id", $"hashtag"))
-    /*<<INFO>>*/  logInfo("Hashtag storing completed!") /*<<INFO>>*/
+	  /*<<INFO>>*/log.info("Hashtag elaborated! >>>>  Now saving to Cassandra... ")/*<<INFO>>*/
+	  //myDataStorer.storeHashtagToCASSANDRA(hashtagDF.select( $"tweet_id", $"hashtag"))
+    /*<<INFO>>*/  log.info("Hashtag storing completed!") /*<<INFO>>*/
 	
 	
 	  
-	  /*<<INFO>>*/logInfo("Evaluating topics...")/*<<INFO>>*/
+	  /*<<INFO>>*/log.info("Evaluating topics...")/*<<INFO>>*/
 	  topicsDF.cache.show()
-	  /*<<INFO>>*/logInfo("Topics evaluated! >>>>  Now saving to Cassandra...")/*<<INFO>>*/
-	  myDataStorer.storeTopicsToCASSANDRA(topicsDF)
-    /*<<INFO>>*/  logInfo("Topics storing completed!") /*<<INFO>>*/
+	  /*<<INFO>>*/log.info("Topics evaluated! >>>>  Now saving to Cassandra...")/*<<INFO>>*/
+	  //myDataStorer.storeTopicsToCASSANDRA(topicsDF)
+    /*<<INFO>>*/  log.info("Topics storing completed!") /*<<INFO>>*/
 	
 	 
     

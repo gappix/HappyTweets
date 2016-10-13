@@ -2,8 +2,7 @@ package it.reti.spark.sentiment
 
 import org.apache.spark.sql.DataFrame
 import org.apache.spark.sql.SaveMode
-import org.apache.spark.Logging
-import org.apache.spark.sql.hive.HiveContext
+
 import org.apache.spark.sql.cassandra
 
 
@@ -15,13 +14,11 @@ import org.apache.spark.sql.cassandra
  * This object stores processing DataFrames into correct CASSANDRA tables
  */
 
-class DataStorer(processingType: String) extends Serializable with Logging{
-  
-   
-  
+class DataStorer(processingType: String) extends Serializable{
+
+
   //get sqlHIVE context and import methods for DataFrame/RDD conversion 
-  private val sqlContextHIVE = ContextHandler.getSqlContextHIVE
-  import sqlContextHIVE.implicits._
+
   
 
   /*

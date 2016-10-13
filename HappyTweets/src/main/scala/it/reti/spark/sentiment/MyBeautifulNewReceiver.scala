@@ -1,7 +1,7 @@
 package it.reti.spark.sentiment
 import org.apache.spark.streaming.receiver.Receiver
 import org.apache.spark.storage.StorageLevel
-import org.apache.spark.Logging
+
 import java.io.BufferedReader
 import java.io.InputStreamReader
 import java.net.ServerSocket
@@ -11,7 +11,7 @@ import java.net.Socket
 	* Created by gazzopa1 on 23/09/2016.
 	*/
 class MyBeautifulNewReceiver(host: String, port: Int)
-	extends Receiver[String](StorageLevel.MEMORY_AND_DISK_2) with Logging {
+	extends Receiver[String](StorageLevel.MEMORY_AND_DISK_2)  {
 	
 	def onStart() {
 		// Start the thread that receives data over a connection

@@ -1,11 +1,10 @@
-package it.reti.spark.sentiment
-import org.apache.spark.streaming.receiver.Receiver
+package horizon
+
+import java.io.{BufferedReader, InputStreamReader}
+import java.net.{ServerSocket, Socket}
+
 import org.apache.spark.storage.StorageLevel
-import org.apache.spark.internal.Logging
-import java.io.BufferedReader
-import java.io.InputStreamReader
-import java.net.ServerSocket
-import java.net.Socket
+import org.apache.spark.streaming.receiver.Receiver
 
 
 /*||||||||||||||||||||||||||||||||||||||||||||  SOCKET RECEIVER  |||||||||||||||||||||||||||||||||||||||||||||||||||||*/
@@ -119,4 +118,6 @@ class SocketReceiver(port: Int) extends Receiver[String](StorageLevel.MEMORY_AND
 	
 	
 	
-}//end SocketReceiver class |||||||||||
+}
+
+//end SocketReceiver class |||||||||||

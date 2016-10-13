@@ -1,7 +1,6 @@
 package it.reti.spark.sentiment
 
-import scala.reflect.runtime.universe
-import org.apache.spark.Logging
+
 import org.apache.spark.SparkContext
 import org.apache.spark.storage.StorageLevel
 import org.apache.spark.util.SizeEstimator
@@ -26,9 +25,10 @@ case class Hedo(
  * This class loads the hedonometer dictionary from a HDFS text file and structures it as DataFrame
  * It can be accessed by other classes by a getHedonometer invocation   
  */    
-object Hedonometer extends Serializable with Logging{
+object Hedonometer extends Serializable {
   
-  
+/*
+
   
     //getting Contexts
     val sc = ContextHandler.getSparkContext
@@ -58,13 +58,14 @@ object Hedonometer extends Serializable with Logging{
     
 
     //.............................................................................................................     
-    /**     
+    /**
      *  Method to 
      *  @return the entire hedonometer dictionary DataFrame from local broadcasted variable
      */
     def getHedonometer  = broadCastedHedonometer.value
       
 
+*/
 
     
     

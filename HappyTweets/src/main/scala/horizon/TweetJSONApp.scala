@@ -1,5 +1,4 @@
-package it.reti.spark.sentiment
-
+package horizon
 
 import org.apache.spark.sql.{DataFrame, SparkSession}
 
@@ -7,32 +6,40 @@ import org.apache.spark.sql.{DataFrame, SparkSession}
 /*||||||||||||||||||||||||||||||||||||||||    TWEET JSON APP   |||||||||||||||||||||||||||||||||||||||||||||||||||||||*/
 /**
 	* Abstract class which prepares input DataFrames using methods specific for Json-input-red data.
-	* It must be extended by elaborator class which acquires data from JSon Twitter API (e.g., python tweepy)
+	* It must be extended by a specific class which acquires data from a JSON Twitter API source (e.g., python tweepy)
 	*
 	* @note super class' acquireData method is still mantained abstract: it must be implemented by final specific class.
 	*
 	* Created by gazzopa1 on 26/09/2016.
 	*/
-abstract class TweetJSONApp(processingType: String) extends TweetApp(processingType) {
+abstract class TweetJSONApp(processingType: String)  {
+
+	 //<-----------------------------
 	
-	
-	
-	
+	def acquireData()// <-------------------------------
+
 	
 	/*.................................................................................................................*/
 	/**
 		* Method to prepare input data DataFrame from a JSON tweet input
 		* @param rawTweets: DataFrame coming from a json-input-read
 		*/
-	def prepareData(rawTweets: DataFrame, spark: SparkSession): Unit = {
-				
+	def prepareData(rawTweets: DataFrame): Unit = {
+
+		@transient lazy  val log = org.apache.log4j.LogManager.getLogger("horizon")
+
+
+		//keep the scope on active SparkSession
+		import rawTweets.sparkSession.implicits._
+
 		
 				//select needed fields using an helper
-				val cleanedTweets = TweetInfoHandler(spark).selectTweetsData(rawTweets)
-				val hashtagTweets= TweetInfoHandler(spark).selectHashtagData(rawTweets)
+				val cleanedTweets = JSONInfoHandler.selectTweetsData(rawTweets)
+				//val hashtagTweets= TweetInfoHandler.selectHashtagData(rawTweets)
 
 
-		cleanedTweets.show(25)
+				rawTweets.select($"id").show(5)
+				log.info(rawTweets.sparkSession.toString)
 				
 				
 				

@@ -1,17 +1,16 @@
-package it.reti.spark.sentiment
+package horizon
 
-
-import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.apache.spark.sql.functions._
+import org.apache.spark.sql.{DataFrame, SparkSession}
 
 
-/*||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||*/
+/*||||||||||||||||||||||||||||||||||||||||||||||||    TOPIC FINDER     |||||||||||||||||||||||||||||||||||||||||||||||*/
 /**
   *
   *
   * Created by gappix on 19/09/2016.
   */
-class TopicFinder (spark: SparkSession) {
+class TopicFinder {
 
   import spark.implicits._
   
@@ -254,8 +253,9 @@ class TopicFinder (spark: SparkSession) {
   
   
   
-}// end TopicFinder class |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+}
 
+// end TopicFinder class |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
 
 
 object TopicFinder{
