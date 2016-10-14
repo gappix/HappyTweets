@@ -101,7 +101,7 @@ object AppSettings {
 		* method that
 		* @return tweets source file name and path
 		*/
-	def input_file = "/RawTweets.json"
+	def input_file = "/JSONTweets.json"
 
 
 
