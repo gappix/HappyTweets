@@ -14,7 +14,7 @@ object AppSettings {
 
 	/*..................................................................................................................*/
 	/**
-		* method to print welcome app name on launch
+		* Method to print welcome app name on launch
 		*/
 	def print_title = {
 
@@ -102,6 +102,98 @@ object AppSettings {
 		* @return tweets source file name and path
 		*/
 	def input_file = "/JSONTweets.json"
+
+
+
+
+
+
+
+	/*..................................................................................................................*/
+	/**
+		* method that
+		* @return Sentix dictionary source file name and path
+		*/
+	def sentix_file = "/Sentix.txt"
+
+
+
+
+
+	/*..................................................................................................................*/
+	/**
+		* method that
+		* @return Sentix dictionary source file name and path
+		*/
+	def cassandra_keyspace= "qlik"
+
+
+
+
+
+
+
+	/*..................................................................................................................*/
+	/**
+		*
+		* @return
+		*/
+	def defined_topics = {
+
+
+		val topics = new Array[Topic](4)
+
+		topics(0) = Topic("business_intelligence",
+									Seq("businessintelligence",
+											"business intelligence",
+											"qlikview",
+											"qlik view",
+											"qliksense",
+											"qlik sense",
+											"analytics",
+											"data analytics",
+											"dataanalytics",
+											"datascience" )			)
+
+
+		topics(1) = Topic( "big_data",
+									Seq("bigdata",
+											"big data",
+											"apachespark",
+											"apache spark",
+											"deeplearning",
+											"hadoop",
+											" iot ",
+											"datalake",
+											"data lake",
+											"machinelearning",
+											"machine learning ",
+											"internet of things")			)
+
+
+		topics(2) = Topic( "viz_your_world",
+									Seq("vizyourworld",
+											"visualize your world",
+											"qlik")			)
+
+
+		topics(3) =  	Topic( "innovazione",
+										Seq("startup",
+												"start up ",
+												"innovazione",
+												"nuove tecnologie",
+												"deeplearning",
+												"artificialintelligence",
+												"innovation",
+												"tech ",
+												"digitaltransformation",
+												"impresa")					)
+
+
+
+		topics
+
+	}
 
 
 

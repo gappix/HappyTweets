@@ -47,67 +47,69 @@ class TopicFinder (spark: SparkSession) {
   
   
   
-  
-  /*---------------------------------
-   * UDF FUNCTIONS DEFINITION
-   ----------------------------------*/
-  /**
-    * this UDF searches for each tweet if it could be labelled with one or more of predefined topics.
-    *
-    * @return topicsFound: a String list of matching topics separated by one blank space " "
-    */
-   private val findTopics = udf ((hashtags: String, text: String)  =>{
-                
-            
-                    
-                  /*
-                  We define a String containing the sequence of topics related to each tweet.
-                  Topic words are separated by a blank space " " for further word split and recognition.
-                   */
-                  var topicsFound = ""
-                  
-                  
-                  
-                  for (topic <- topics){
-                    
-                    //if a topic is found, topic's name is added to topics String list
-                    if (topicIsFound(topic, hashtags, text))     topicsFound +=   topic.name + ", "
-                    
-                  }
-                  
-                  
-                 //check if any of preselected topics has been found; otherwise a generic topic "other" is labelled
-                  if (topicsFound.length > 0)  topicsFound
-                  else "other"
-     
-     
-              }
-              )// end findTopics UDF definition //
-  
-  
-  
-  /**
-    * This UDF method identifies if a DataFrame topic field contains an empty value
-    * if true explicits it with a null value, otherwise it gives back original value with a LowerCase sanitization
-    */
-  val identifyNull = udf (( topic: String) =>{  if (topic.length() > 0) topic.toLowerCase()
-                                                else null
-                                              }
-                                              )// end identifyNull
-  
-  
-  
-  
 
-  
-  
-  
-  
-  
-  
-  
-  
-  /*..................................................................................................................*/
+
+
+	/*---------------------------------
+	 * UDF FUNCTIONS DEFINITION
+	 ----------------------------------*/
+	/**
+		* this UDF searches for each tweet if it could be labelled with one or more of predefined topics.
+		*
+		* @return topicsFound: a String list of matching topics separated by one blank space " "
+		*/
+	private val findTopics = udf ((hashtags: String, text: String)  =>{
+
+
+
+		/*
+		We define a String containing the sequence of topics related to each tweet.
+		Topic words are separated by a blank space " " for further word split and recognition.
+		 */
+		var topicsFound = ""
+
+
+
+		for (topic <- topics){
+
+			//if a topic is found, topic's name is added to topics String list
+			if (topicIsFound(topic, hashtags, text))     topicsFound +=   topic.name + ", "
+
+		}
+
+
+		//check if any of preselected topics has been found; otherwise a generic topic "other" is labelled
+		if (topicsFound.length > 0)  topicsFound
+		else "other"
+
+
+	}
+	)// end findTopics UDF definition //
+
+
+
+	/**
+		* This UDF method identifies if a DataFrame topic field contains an empty value
+		* if true explicits it with a null value, otherwise it gives back original value with a LowerCase sanitization
+		*/
+	val identifyNull = udf (( topic: String) =>{  if (topic.length() > 0) topic.toLowerCase()
+	else null
+	}
+	)// end identifyNull
+
+
+
+
+
+
+
+
+
+
+
+
+
+	/*..................................................................................................................*/
   /**
     *
     * @param tweet a DataFrame with "tweets_id", "text", "hashtag" infos

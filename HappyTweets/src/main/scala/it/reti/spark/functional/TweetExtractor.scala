@@ -37,16 +37,16 @@ object TweetExtractor {
 		 */
 
 
-		if (TweetExtractorHelper.hasColumn(rawTweetsDF, "coordinates.coordinates")) {
+		if (TweetExtractorHelper.has_column(rawTweetsDF, "coordinates.coordinates")) {
 
-			if (TweetExtractorHelper.hasColumn(rawTweetsDF, "place.bounding_box.coordinates")) {
+			if (TweetExtractorHelper.has_column(rawTweetsDF, "place.bounding_box.coordinates")) {
 				TweetExtractorHelper.full_select(rawTweetsDF, extractor)
 			}
 
 			else {
 				TweetExtractorHelper.coordinates_only_select(rawTweetsDF, extractor)
 			}
-		} else if (TweetExtractorHelper.hasColumn(rawTweetsDF, "place.bounding_box.coordinates")) {
+		} else if (TweetExtractorHelper.has_column(rawTweetsDF, "place.bounding_box.coordinates")) {
 			TweetExtractorHelper.place_only_select(rawTweetsDF, extractor)
 		}
 		else

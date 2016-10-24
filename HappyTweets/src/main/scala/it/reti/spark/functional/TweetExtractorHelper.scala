@@ -3,7 +3,6 @@ package it.reti.spark.functional
 import org.apache.spark.sql._
 import org.apache.spark.sql.expressions.UserDefinedFunction
 import org.apache.spark.sql.functions._
-
 import scala.util.Try
 
 /**
@@ -46,22 +45,22 @@ object TweetExtractorHelper {
 			$"timestamp_ms".as("time"),
 
 			//Geo Localization latitude
-			when($"coordinates.coordinates".isNotNull,  extractor("geo_latitude")(rawTweets("coordinates.coordinates")) )   // extract_geo_localization_latitude(rawTweets("coordinates.coordinates")))
+			when($"coordinates.coordinates".isNotNull,  extractor("geo_latitude")(rawTweets("coordinates.coordinates")) )
 				.otherwise(null)
 				.as("geo_latitude"),
 
 			//Geo Localization longitude
-			when($"coordinates.coordinates".isNotNull, extractor("geo_longitude")(rawTweets("coordinates.coordinates"))   )   // extract_geo_localization_latitude(rawTweets("coordinates.coordinates")))
+			when($"coordinates.coordinates".isNotNull, extractor("geo_longitude")(rawTweets("coordinates.coordinates"))   )
 				.otherwise(null)
 				.as("geo_longitude"),
 
 			//Place latitude
-			when($"place.bounding_box.coordinates".isNotNull, extractor("bb_latitude")(rawTweets("place.bounding_box.coordinates"))    ) // extract_bounding_box_latitude(rawTweets("place.bounding_box.coordinates")))
+			when($"place.bounding_box.coordinates".isNotNull, extractor("bb_latitude")(rawTweets("place.bounding_box.coordinates"))    )
 				.otherwise(null)
 				.as("place_latitude"),
 
 			//Place longitude
-			when($"place.bounding_box.coordinates".isNotNull, extractor("bb_longitude")(rawTweets("place.bounding_box.coordinates"))    )//extract_bounding_box_longitude(rawTweets("place.bounding_box.coordinates")))
+			when($"place.bounding_box.coordinates".isNotNull, extractor("bb_longitude")(rawTweets("place.bounding_box.coordinates"))    )
 				.otherwise(null)
 				.as("place_longitude"),
 
@@ -283,7 +282,7 @@ object TweetExtractorHelper {
 		* @param path: string with the (nested) path to check
 		* @return true if it exists, false otherwise
 		*/
-	def hasColumn(df: DataFrame, path: String) = Try(df(path)).isSuccess
+	def has_column(df: DataFrame, path: String) = Try(df(path)).isSuccess
 
 
 

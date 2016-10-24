@@ -368,22 +368,22 @@ abstract class TweetApp(processingType : String) extends Serializable {
 	
   
   /*..................................................................................................................*/
-  /**
-    * This method counts, for each tweet_id, how many words its text is formed by
-    *
-    * @param inputDF: DataFrame with following fields: "tweet_id", "word" (already sanitized)
-    * @return a DataFrame with two fields: "tweet_id", "tweet_words"
-    */
-  private def countTweetsWords(inputDF: DataFrame): DataFrame = {
-	  
+	/**
+		* This method counts, for each tweet_id, how many words its text is formed by
+		*
+		* @param inputDF: DataFrame with following fields: "tweet_id", "word" (already sanitized)
+		* @return a DataFrame with two fields: "tweet_id", "tweet_words"
+		*/
+	private def countTweetsWords(inputDF: DataFrame): DataFrame = {
 
-    //count original tweet words
-    inputDF.groupBy("tweet_id")
-	          .agg( "word"-> "count" )
-	          .withColumnRenamed("count(word)","tweet_words")
-    
-    
-  }//end method //
+
+		//count original tweet words
+		inputDF.groupBy("tweet_id")
+			.agg( "word"-> "count" )
+			.withColumnRenamed("count(word)","tweet_words")
+
+
+	}//end method //
   
   
   
@@ -473,27 +473,28 @@ abstract class TweetApp(processingType : String) extends Serializable {
 	  //myDataStorer.storeSentimentToCASSANDRA(sentimentDF)
     /*<<INFO>>*/  log.info("Sentiment storing completed!")/*<<INFO>>*/
 	
-	  
-	
-	  /*<<INFO>>*/log.info("Elaborating hashtags...")/*<<INFO>>*/
-	  hashtagDF.cache.show()
-	  /*<< INFO >>*/ //logInfo("Found "    + hashtagDF.count.toString()    + " hashtags") /*<< INFO >>*/
-	  /*<<INFO>>*/log.info("Hashtag elaborated! >>>>  Now saving to Cassandra... ")/*<<INFO>>*/
-	  //myDataStorer.storeHashtagToCASSANDRA(hashtagDF.select( $"tweet_id", $"hashtag"))
-    /*<<INFO>>*/  log.info("Hashtag storing completed!") /*<<INFO>>*/
-	
-	
-	  
-	  /*<<INFO>>*/log.info("Evaluating topics...")/*<<INFO>>*/
-	  topicsDF.cache.show()
-	  /*<<INFO>>*/log.info("Topics evaluated! >>>>  Now saving to Cassandra...")/*<<INFO>>*/
-	  //myDataStorer.storeTopicsToCASSANDRA(topicsDF)
-    /*<<INFO>>*/  log.info("Topics storing completed!") /*<<INFO>>*/
-	
-	 
-    
-    
-    tweetProcessedDF.unpersist()
+
+
+
+		/*<<INFO>>*/log.info("Elaborating hashtags...")/*<<INFO>>*/
+		hashtagDF.cache.show()
+		/*<< INFO >>*/ //logInfo("Found "    + hashtagDF.count.toString()    + " hashtags") /*<< INFO >>*/
+		/*<<INFO>>*/log.info("Hashtag elaborated! >>>>  Now saving to Cassandra... ")/*<<INFO>>*/
+		//myDataStorer.storeHashtagToCASSANDRA(hashtagDF.select( $"tweet_id", $"hashtag"))
+		/*<<INFO>>*/  log.info("Hashtag storing completed!") /*<<INFO>>*/
+
+
+
+		/*<<INFO>>*/log.info("Evaluating topics...")/*<<INFO>>*/
+		topicsDF.cache.show()
+		/*<<INFO>>*/log.info("Topics evaluated! >>>>  Now saving to Cassandra...")/*<<INFO>>*/
+		//myDataStorer.storeTopicsToCASSANDRA(topicsDF)
+		/*<<INFO>>*/  log.info("Topics storing completed!") /*<<INFO>>*/
+
+
+
+
+		tweetProcessedDF.unpersist()
     sentimentDF.unpersist()
     hashtagDF.unpersist()
     topicsDF.unpersist()
